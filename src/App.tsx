@@ -32,12 +32,12 @@ export default function App() {
         <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-        {/* Public pages */}
-        <Route path="/:agentSlug" element={<PublicPortfolio />} />
-        <Route path="/:agentSlug/:propertySlug" element={<PublicProperty />} />
-
         {/* Default */}
         <Route path="/" element={<Home />} />
+
+        {/* Public pages — MUST be last to avoid catching /dashboard, /properties etc */}
+        <Route path="/p/:agentSlug" element={<PublicPortfolio />} />
+        <Route path="/p/:agentSlug/:propertySlug" element={<PublicProperty />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
