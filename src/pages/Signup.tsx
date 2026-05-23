@@ -34,26 +34,30 @@ export default function Signup() {
     })
     if (authError) { setError(authError.message); setLoading(false); return }
 
-    const userId = authData.user?.id
-    if (!userId) { setError('Account created but user ID missing.'); setLoading(false); return }
+    // With autoconfirm enabled, user is available immediately
+    const userId = authData.user?.id ?? authData.session?.user?.id
+    if (!userId) { setError('Signup succeeded but could not retrieve user. Please try logging in.'); setLoading(false); return }
 
     const slug = form.slug || slugify(`${form.firstName} ${form.lastName}`)
 
-    // Create profile
+    // Create profile — uses agent_pages schema (display_name field)
     const { error: profileError } = await supabase.from('profiles').insert({
       id: userId,
-      first_name: form.firstName,
-      last_name: form.lastName,
+      display_name: `${form.firstName} ${form.lastName}`.trim(),
       email: form.email,
       slug,
     })
-    if (profileError) { setError(profileError.message); setLoading(false); return }
+    if (profileError && profileError.code !== '23505') { // ignore duplicate slug
+      setError(profileError.message); setLoading(false); return
+    }
 
     // Create entitlement — pro trial 14 days
     const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
     await supabase.from('entitlements').insert({
       agent_id: userId,
-      plan: 'pro_trial',
+      plan: 'pro',
+      property_limit: 999,
+      portfolio_enabled: true,
       trial_ends_at: trialEnd,
       active: true,
     })
@@ -130,7 +134,7 @@ export default function Signup() {
               Portfolio URL slug <span className="normal-case font-normal text-gray-300">(optional)</span>
             </label>
             <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#c9a84c] transition-colors">
-              <span className="bg-gray-50 border-r border-gray-200 px-3 py-3 text-xs text-gray-400 shrink-0">agentpages.io/</span>
+              <span className="bg-gray-50 border-r border-gray-200 px-3 py-3 text-xs text-gray-400 shrink-0">yoursite/</span>
               <input
                 value={form.slug}
                 onChange={set('slug')}
