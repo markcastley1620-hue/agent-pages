@@ -12,6 +12,7 @@ import Leads from './pages/Leads'
 import Settings from './pages/Settings'
 import PublicPortfolio from './pages/PublicPortfolio'
 import PublicProperty from './pages/PublicProperty'
+import Home from './pages/Home'
 
 export default function App() {
   return (
@@ -36,7 +37,7 @@ export default function App() {
         <Route path="/:agentSlug/:propertySlug" element={<PublicProperty />} />
 
         {/* Default */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Home />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
