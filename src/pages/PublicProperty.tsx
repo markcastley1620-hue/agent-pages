@@ -164,6 +164,23 @@ export default function PublicProperty() {
           .lead-card{position:static}
           .specs-grid,.included-grid{grid-template-columns:1fr 1fr}
         }
+        @media(max-width:480px){
+          .nav{height:60px;padding:0 16px}
+          .nav-name{font-size:13px}
+          .container{padding:16px 16px 64px}
+          .hero-title{font-size:20px}
+          .hero-meta{font-size:12px;gap:6px}
+          .gallery{grid-template-rows:220px}
+          .specs-grid{grid-template-columns:1fr 1fr}
+          .included-grid{grid-template-columns:1fr}
+          .lead-price{font-size:22px}
+          .lead-row{grid-template-columns:1fr}
+          .lead-secondary{grid-template-columns:1fr}
+          .summary-title{font-size:18px}
+          .section-title{font-size:17px}
+          .agent-row{flex-wrap:wrap;gap:12px}
+          .footer{padding:24px 16px}
+        }
       `}</style>
 
       {/* NAV — agent branding only, no AOS */}

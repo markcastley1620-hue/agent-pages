@@ -517,3 +517,29 @@
   .hp-root .notif-stack { padding: 0; }
   .hp-root .faq { padding: 60px 24px; }
 }
+
+/* ── ENHANCED MOBILE (480px and below) ── */
+@media (max-width: 480px) {
+  .hp-root .hero-title { font-size: 28px; letter-spacing: -0.02em; }
+  .hp-root .hero-sub { font-size: 14px; }
+  .hp-root .btn-primary-lg, .hp-root .btn-secondary-lg { width: 100%; justify-content: center; padding: 14px 20px; }
+  .hp-root .hero-actions { flex-direction: column; gap: 10px; }
+  .hp-root .pricing-grid { grid-template-columns: 1fr; }
+  .hp-root .preview { padding: 0 16px; }
+  .hp-root .preview-frame { padding: 12px; }
+  .hp-root .mini { padding: 16px 16px 20px; }
+  .hp-root .mini-gallery { grid-template-rows: 100px 100px; }
+  .hp-root .mini-specs { grid-template-columns: 1fr 1fr; }
+  .hp-root .mini-sold-grid { grid-template-columns: 1fr; gap: 6px; }
+  .hp-root .kpi-row { grid-template-columns: 1fr; }
+  .hp-root .ai-outputs-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .hp-root .lead-caps { grid-template-columns: 1fr; }
+  .hp-root .portfolio-mock-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .hp-root .faq-q { font-size: 14px; }
+  .hp-root .final-cta h2 { font-size: 26px; }
+  .hp-root .final-cta-btn { width: 100%; }
+  .hp-root .disc-track { gap: 12px; }
+  .hp-root .disc-item { font-size: 12px; }
+  .hp-root .section-title { font-size: 26px; }
+  .hp-root .nav-cta .nav-btn:not(.primary) { display: none; }
+}

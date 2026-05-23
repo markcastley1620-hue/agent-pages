@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Pages — Add a property</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f1419;
+  --ink-soft: #2c343d;
+  --muted: #5a6470;
+  --quiet: #8b95a0;
+  --line: #e6e8eb;
+  --line-soft: #f0f2f4;
+  --paper: #ffffff;
+  --paper-warm: #fbfaf7;
+  --accent: #2d5a4f;
+  --accent-hover: #234a40;
+  --accent-soft: #e8f0ed;
+  --accent-bright: #3d8a76;
+  --highlight: #f6f1e8;
+  --highlight-line: #ebe3d2;
+  --highlight-text: #8b6f3a;
+  --signal: #c2603a;
+  --signal-soft: #fbeee7;
+}
+
+html, body { font-family: 'Inter', sans-serif; background: var(--paper-warm); color: var(--ink); -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; line-height: 1.5; min-height: 100vh; }
+
+/* ── TOP BAR ── */
+.topbar { height: 60px; background: #fff; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
+.topbar-left { display: flex; align-items: center; gap: 24px; }
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+.topbar-name { font-size: 14.5px; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+.topbar-crumb { display: flex; align-items: center; gap: 8px; padding-left: 24px; border-left: 1px solid var(--line-soft); font-size: 13px; color: var(--muted); }
+.topbar-crumb a { color: var(--muted); text-decoration: none; }
+.topbar-crumb a:hover { color: var(--ink); }
+.topbar-crumb-sep { color: var(--quiet); }
+.topbar-crumb-current { color: var(--ink); font-weight: 500; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-save-state { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 11.5px; color: var(--quiet); font-weight: 500; }
+.topbar-save-state svg { width: 11px; height: 11px; stroke: var(--accent-bright); stroke-width: 2.4; fill: none; }
+.topbar-btn { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all .12s; border: none; }
+.topbar-btn.ghost { background: transparent; color: var(--muted); }
+.topbar-btn.ghost:hover { background: var(--line-soft); color: var(--ink); }
+.topbar-btn.outline { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.topbar-btn.outline:hover { border-color: var(--ink); }
+
+/* ── PAGE LAYOUT ── */
+.page { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 60px); }
+
+/* ── PROGRESS RAIL ── */
+.rail { background: #fff; border-right: 1px solid var(--line-soft); padding: 32px 0; position: sticky; top: 60px; align-self: start; height: calc(100vh - 60px); overflow-y: auto; }
+.rail-head { padding: 0 24px 20px; border-bottom: 1px solid var(--line-soft); margin-bottom: 16px; }
+.rail-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--quiet); font-weight: 600; margin-bottom: 4px; }
+.rail-title { font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+
+.rail-progress { padding: 0 16px 14px; }
+.rail-progress-bar { height: 4px; background: var(--line-soft); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+.rail-progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 2px; transition: width .3s ease; }
+.rail-progress-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+.rail-progress-label strong { color: var(--ink); font-weight: 600; }
+
+.rail-steps { display: flex; flex-direction: column; padding: 8px 12px; }
+.rail-step { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; cursor: pointer; transition: all .12s; position: relative; }
+.rail-step:hover:not(.locked) { background: var(--paper-warm); }
+.rail-step.active { background: var(--accent-soft); }
+.rail-step.locked { cursor: not-allowed; opacity: 0.55; }
+.rail-step-marker { width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--quiet); flex-shrink: 0; position: relative; z-index: 1; transition: all .15s; }
+.rail-step.active .rail-step-marker { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 4px rgba(45,90,79,0.12); }
+.rail-step.done .rail-step-marker { background: var(--accent-bright); border-color: var(--accent-bright); color: #fff; }
+.rail-step.done .rail-step-marker svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 3; fill: none; }
+.rail-step-line { position: absolute; left: 25px; top: 36px; bottom: -2px; width: 1.5px; background: var(--line); z-index: 0; }
+.rail-step.done .rail-step-line { background: var(--accent-bright); }
+.rail-step:last-child .rail-step-line { display: none; }
+.rail-step-body { flex: 1; min-width: 0; padding-top: 1px; }
+.rail-step-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 1px; }
+.rail-step.locked .rail-step-name { color: var(--quiet); font-weight: 500; }
+.rail-step-meta { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.rail-step.done .rail-step-meta { color: var(--accent); font-weight: 500; }
+
+.rail-footer { padding: 20px 24px; margin-top: auto; border-top: 1px solid var(--line-soft); font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.rail-footer strong { color: var(--ink); font-weight: 600; }
+
+/* ── MAIN AREA ── */
+.main { padding: 48px 64px 100px; max-width: 880px; }
+.step-eyebrow { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 12px; }
+.step-title { font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 12px; }
+.step-sub { font-size: 15.5px; color: var(--muted); margin-bottom: 36px; line-height: 1.6; max-width: 640px; }
+
+/* ── FORM BUILDING BLOCKS ── */
+.field-group { margin-bottom: 22px; }
+.field-group-title { font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--quiet); font-weight: 600; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line-soft); }
+
+.field { margin-bottom: 16px; }
+.field-label { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.005em; }
+.field-label .field-required { color: var(--signal); font-size: 11px; font-weight: 500; margin-left: 6px; }
+.field-label .field-optional { color: var(--quiet); font-size: 11px; font-weight: 400; margin-left: 6px; }
+.field-hint { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.field-hint strong { color: var(--ink); font-weight: 500; }
+
+.field-input,
+.field-textarea,
+.field-select {
+  width: 100%; padding: 11px 14px; background: #fff;
+  border: 1px solid var(--line); border-radius: 9px;
+  font-size: 14px; color: var(--ink); font-family: inherit;
+  transition: all .12s; line-height: 1.5;
+}
+.field-input::placeholder, .field-textarea::placeholder { color: var(--quiet); }
+.field-input:focus, .field-textarea:focus, .field-select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45,90,79,0.08);
+}
+.field-textarea { resize: vertical; min-height: 100px; font-family: inherit; }
+.field-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6470' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.field-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+.field-prefix { position: relative; }
+.field-prefix .prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--quiet); font-size: 13.5px; font-weight: 500; pointer-events: none; }
+.field-prefix .field-input { padding-left: 42px; }
+.field-suffix { position: relative; }
+.field-suffix .suffix { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--quiet); font-size: 13.5px; font-weight: 500; pointer-events: none; }
+.field-suffix .field-input { padding-right: 60px; }
+
+/* Toggle row */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: border-color .12s; }
+.toggle-row:hover { border-color: var(--quiet); }
+.toggle-row-text { flex: 1; }
+.toggle-row-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.toggle-row-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.toggle { width: 36px; height: 20px; background: var(--line); border-radius: 10px; position: relative; flex-shrink: 0; transition: background .15s; cursor: pointer; }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.toggle.on { background: var(--accent); }
+.toggle.on::after { transform: translateX(16px); }
+
+.recommended-tag { display: inline-flex; align-items: center; padding: 2px 7px; background: var(--accent-soft); border: 1px solid #c9dcd6; border-radius: 4px; font-size: 10px; font-weight: 600; color: var(--accent); letter-spacing: 0.04em; text-transform: uppercase; margin-left: 6px; vertical-align: middle; }
+
+/* Choice cards */
+.choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choice-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.choice { padding: 14px 16px; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; transition: all .12s; display: flex; align-items: center; gap: 10px; }
+.choice:hover { border-color: var(--quiet); }
+.choice.selected { border-color: var(--accent); background: var(--accent-soft); }
+.choice-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--line-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.choice.selected .choice-icon { background: #fff; }
+.choice-icon svg { width: 14px; height: 14px; stroke: var(--ink); stroke-width: 1.8; fill: none; }
+.choice.selected .choice-icon svg { stroke: var(--accent); }
+.choice-text { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.choice.selected .choice-text { color: var(--accent); font-weight: 600; }
+
+/* AI suggest button (inline with field) */
+.btn-ai-suggest { display: inline-flex; align-items: center; gap: 7px; padding: 0 14px; background: var(--highlight); border: 1px solid var(--highlight-line); border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--highlight-text); cursor: pointer; font-family: inherit; transition: all .12s; white-space: nowrap; }
+.btn-ai-suggest:hover { background: #f0e9d3; border-color: #d8c89e; }
+.btn-ai-suggest-icon { width: 18px; height: 18px; border-radius: 5px; background: var(--highlight-text); display: inline-flex; align-items: center; justify-content: center; }
+.btn-ai-suggest-icon svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 2.5; fill: none; }
+
+.ai-suggest-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--highlight-text); font-weight: 600; margin-bottom: 8px; }
+.ai-suggest-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ai-suggest-row { padding: 11px 14px; background: var(--highlight); border: 1px solid var(--highlight-line); border-radius: 8px; font-size: 13.5px; color: var(--ink); cursor: pointer; transition: all .12s; }
+.ai-suggest-row:hover { background: #f0e9d3; border-color: #d8c89e; }
+.ai-suggest-regen { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; background: transparent; border: none; font-size: 12px; font-weight: 500; color: var(--highlight-text); cursor: pointer; font-family: inherit; }
+.ai-suggest-regen:hover { background: var(--highlight); border-radius: 6px; }
+.ai-suggest-regen svg { width: 12px; height: 12px; stroke: var(--highlight-text); stroke-width: 2; fill: none; }
+
+/* AI description block */
+.ai-desc-block { background: var(--highlight); border: 1px solid var(--highlight-line); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+.ai-desc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ai-desc-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--highlight-text); font-weight: 700; }
+.ai-desc-eyebrow-icon { width: 18px; height: 18px; border-radius: 5px; background: var(--highlight-text); display: inline-flex; align-items: center; justify-content: center; }
+.ai-desc-eyebrow-icon svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 2.5; fill: none; }
+.ai-desc-regen { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; background: #fff; border: 1px solid var(--highlight-line); border-radius: 6px; font-size: 11.5px; font-weight: 500; color: var(--highlight-text); cursor: pointer; font-family: inherit; }
+.ai-desc-regen svg { width: 11px; height: 11px; stroke: var(--highlight-text); stroke-width: 2; fill: none; }
+.ai-desc-regen:hover { background: var(--highlight); }
+.ai-desc-body { padding: 14px 16px; background: #fff; border-radius: 8px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.65; }
+.ai-desc-body p { margin-bottom: 10px; }
+.ai-desc-body p:last-child { margin-bottom: 0; }
+.ai-desc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 11.5px; color: var(--highlight-text); }
+.ai-desc-foot a { color: var(--highlight-text); text-decoration: underline; cursor: pointer; font-weight: 500; }
+
+/* Photo upload */
+.photo-upload-zone { padding: 32px; background: #fff; border: 2px dashed var(--line); border-radius: 14px; text-align: center; cursor: pointer; transition: all .15s; margin-bottom: 20px; }
+.photo-upload-zone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.photo-upload-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.photo-upload-icon svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+.photo-upload-title { font-size: 14.5px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.photo-upload-hint { font-size: 12.5px; color: var(--muted); }
+.photo-upload-hint strong { color: var(--ink); font-weight: 500; }
+
+.photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.photo-tile { position: relative; aspect-ratio: 4/3; border-radius: 10px; overflow: hidden; cursor: move; }
+.photo-tile.hero { grid-column: span 2; grid-row: span 2; }
+.photo-tile.p1 { background: linear-gradient(135deg, #2d3e54 0%, #1a2535 40%, #c9a872 100%); }
+.photo-tile.p2 { background: linear-gradient(135deg, #d4c9b8 0%, #a89880 100%); }
+.photo-tile.p3 { background: linear-gradient(135deg, #4a5d6b 0%, #2c3a47 100%); }
+.photo-tile.p4 { background: linear-gradient(135deg, #c4ad8a 0%, #8b7456 100%); }
+.photo-tile.p5 { background: linear-gradient(135deg, #5a7d8b 0%, #34505f 100%); }
+.photo-tile.empty { background: var(--paper-warm); border: 1.5px dashed var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.photo-tile.empty svg { width: 18px; height: 18px; stroke: var(--quiet); stroke-width: 1.8; fill: none; }
+.photo-tile-tag { position: absolute; top: 8px; left: 8px; padding: 3px 8px; background: rgba(15,20,25,0.85); backdrop-filter: blur(6px); border-radius: 5px; font-size: 10px; font-weight: 600; color: #fff; letter-spacing: 0.04em; }
+.photo-tile-remove { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: rgba(15,20,25,0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .12s; }
+.photo-tile-remove:hover { background: var(--signal); }
+.photo-tile-remove svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 2.5; fill: none; }
+
+/* URL builder */
+.url-builder { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+.url-builder-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--quiet); font-weight: 600; margin-bottom: 10px; }
+.url-builder-row { display: flex; align-items: center; padding: 11px 14px; background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 8px; font-size: 13.5px; color: var(--ink); margin-bottom: 8px; font-family: 'Inter', sans-serif; }
+.url-builder-prefix { color: var(--muted); }
+.url-builder-slug { color: var(--accent); font-weight: 600; flex: 1; }
+.url-builder-edit { font-size: 11px; color: var(--accent); cursor: pointer; font-weight: 500; padding: 3px 8px; background: #fff; border: 1px solid var(--line-soft); border-radius: 5px; }
+.url-builder-hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.url-builder-upgrade { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--accent-soft); border: 1px solid #c9dcd6; border-radius: 5px; font-size: 11px; font-weight: 600; color: var(--accent); margin-top: 8px; cursor: pointer; }
+.url-builder-upgrade svg { width: 10px; height: 10px; stroke: var(--accent); stroke-width: 2.2; fill: none; }
+
+/* Review card */
+.review-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 24px; margin-bottom: 14px; }
+.review-card-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid var(--line-soft); margin-bottom: 16px; }
+.review-card-title { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
+.review-card-edit { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; background: #fff; border: 1px solid var(--line); border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--ink-soft); cursor: pointer; font-family: inherit; transition: all .12s; }
+.review-card-edit:hover { border-color: var(--ink); color: var(--ink); }
+.review-card-edit svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2; fill: none; }
+.review-grid { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; }
+.review-key { font-size: 12px; color: var(--muted); font-weight: 500; }
+.review-val { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+.review-val.muted { color: var(--quiet); font-weight: 400; font-style: italic; }
+.review-photos-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.review-photo-thumb { width: 56px; height: 42px; border-radius: 6px; }
+.review-photo-thumb.p1 { background: linear-gradient(135deg, #2d3e54 0%, #1a2535 40%, #c9a872 100%); }
+.review-photo-thumb.p2 { background: linear-gradient(135deg, #d4c9b8, #a89880); }
+.review-photo-thumb.p3 { background: linear-gradient(135deg, #4a5d6b, #2c3a47); }
+.review-photo-thumb.p4 { background: linear-gradient(135deg, #c4ad8a, #8b7456); }
+.review-photo-thumb.p5 { background: linear-gradient(135deg, #5a7d8b, #34505f); }
+.review-photos-count { font-size: 11.5px; color: var(--muted); align-self: center; padding-left: 4px; }
+
+/* Publish summary box */
+.publish-summary { background: var(--accent-soft); border: 1px solid #c9dcd6; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; }
+.publish-summary-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.publish-summary-icon { width: 32px; height: 32px; border-radius: 9px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+.publish-summary-icon svg { width: 16px; height: 16px; stroke: #fff; stroke-width: 2.4; fill: none; }
+.publish-summary-title { font-size: 15px; font-weight: 600; color: var(--accent); letter-spacing: -0.01em; }
+.publish-summary-list { display: flex; flex-direction: column; gap: 6px; padding-left: 42px; }
+.publish-summary-item { font-size: 13px; color: var(--ink); line-height: 1.5; display: flex; align-items: flex-start; gap: 8px; }
+.publish-summary-item::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin-top: 8px; flex-shrink: 0; }
+
+/* Footer nav */
+.step-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 28px; margin-top: 32px; border-top: 1px solid var(--line-soft); }
+.step-footer-left { display: flex; align-items: center; gap: 12px; }
+.step-footer-right { display: flex; align-items: center; gap: 10px; }
+.btn { padding: 11px 22px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .12s; border: none; display: inline-flex; align-items: center; gap: 7px; }
+.btn svg { width: 14px; height: 14px; stroke-width: 2; fill: none; stroke: currentColor; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary.publish { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); box-shadow: 0 4px 14px rgba(45,90,79,0.25); padding: 13px 26px; font-size: 14.5px; }
+.btn-primary.publish:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(45,90,79,0.35); }
+.btn-outline { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.btn-outline:hover { border-color: var(--ink); }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { background: var(--line-soft); color: var(--ink); }
+
+/* Step screens (only one shown at a time) */
+.step-screen { display: none; }
+.step-screen.active { display: block; animation: fadein .25s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Two-column hint layout for steps */
+.with-hint { display: grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: start; }
+.side-hint { background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 12px; padding: 20px; position: sticky; top: 96px; }
+.side-hint-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.side-hint-icon svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; }
+.side-hint h5 { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.005em; }
+.side-hint p { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+.side-hint p:last-child { margin-bottom: 0; }
+.side-hint strong { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 900px) {
+  .topbar { padding: 0 16px; }
+  .topbar-crumb { display: none; }
+  .topbar-save-state { display: none; }
+  .page { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; padding: 16px 0; border-right: none; border-bottom: 1px solid var(--line-soft); }
+  .main { padding: 32px 20px 80px; }
+  .step-title { font-size: 24px; }
+  .with-hint { grid-template-columns: 1fr; }
+  .side-hint { position: static; }
+  .field-row, .field-row-3, .field-row-4 { grid-template-columns: 1fr; }
+  .choice-grid, .choice-grid-3 { grid-template-columns: 1fr; }
+  .photo-grid { grid-template-columns: 1fr 1fr; }
+  .review-grid { grid-template-columns: 1fr; gap: 4px 0; }
+  .review-key { padding-top: 8px; }
+  .step-footer { flex-direction: column-reverse; gap: 12px; align-items: stretch; }
+  .step-footer-left, .step-footer-right { width: 100%; }
+  .step-footer-right { flex-direction: column; }
+  .btn { width: 100%; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <div class="topbar-logo">a</div>
+      <div class="topbar-name">Agent Pages</div>
+    </div>
+    <div class="topbar-crumb">
+      <a href="#">Properties</a>
+      <span class="topbar-crumb-sep">/</span>
+      <span class="topbar-crumb-current">Add new property</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-save-state">
+      <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+      <span>Draft saved 2s ago</span>
+    </div>
+    <button class="topbar-btn ghost">Save &amp; exit</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- PROGRESS RAIL -->
+  <aside class="rail">
+    <div class="rail-head">
+      <div class="rail-eyebrow">New property</div>
+      <div class="rail-title">Untitled draft</div>
+    </div>
+
+    <div class="rail-progress">
+      <div class="rail-progress-bar">
+        <div class="rail-progress-fill" id="progressFill"></div>
+      </div>
+      <div class="rail-progress-label"><strong id="progressNum">1</strong> of 6 · <span id="progressLabel">The basics</span></div>
+    </div>
+
+    <div class="rail-steps">
+
+      <div class="rail-step active" data-step="1" onclick="goStep(1)">
+        <div class="rail-step-marker">1</div>
+        <div class="rail-step-line"></div>
+        <div class="rail-step-body">
+          <div class="rail-step-name">The basics</div>
+          <div class="rail-step-meta">Type, beds, location</div>
+        </div>
+      </div>
+
+      <div class="rail-step locked" data-step="2" onclick="goStep(2)">
+        <div class="rail-step-marker">2</div>
+        <div class="rail-step-line"></div>
+        <div class="rail-step-body">
+          <div class="rail-step-name">Specs &amp; price</div>
+          <div class="rail-step-meta">Size, price, features</div>
+        </div>
+      </div>
+
+      <div class="rail-step locked" data-step="3" onclick="goStep(3)">
+        <div class="rail-step-marker">3</div>
+        <div class="rail-step-line"></div>
+        <div class="rail-step-body">
+          <div class="rail-step-name">AI description</div>
+          <div class="rail-step-meta">Auto-written, editable</div>
+        </div>
+      </div>
+
+      <div class="rail-step locked" data-step="4" onclick="goStep(4)">
+        <div class="rail-step-marker">4</div>
+        <div class="rail-step-line"></div>
+        <div class="rail-step-body">
+          <div class="rail-step-name">Photos</div>
+          <div class="rail-step-meta">Hero + gallery</div>
+        </div>
+      </div>
+
+      <div class="rail-step locked" data-step="5" onclick="goStep(5)">
+        <div class="rail-step-marker">5</div>
+        <div class="rail-step-line"></div>
+        <div class="rail-step-body">
+          <div class="rail-step-name">URL &amp; options</div>
+          <div class="rail-step-meta">Slug, pricing data</div>
+        </div>
+      </div>
+
+      <div class="rail-step locked" data-step="6" onclick="goStep(6)">
+        <div class="rail-step-marker">6</div>
+        <div class="rail-step-body">
+          <div class="rail-step-name">Review &amp; publish</div>
+          <div class="rail-step-meta">Final check, go live</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="rail-footer">
+      Your draft is <strong>auto-saved</strong>. You can close this and come back anytime — just open the draft from your properties list.
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="main">
+
+    <!-- ── STEP 1: BASICS ── -->
+    <div class="step-screen active" data-screen="1">
+      <div class="step-eyebrow">Step 1 of 6</div>
+      <h1 class="step-title">Let's start with the basics</h1>
+      <p class="step-sub">Just the essentials — what kind of property, where it is, and what to call it. You can refine everything as you go.</p>
+
+      <div class="with-hint">
+        <div>
+
+          <div class="field">
+            <div class="field-label">Property type<span class="field-required">required</span></div>
+            <div class="choice-grid-3">
+              <div class="choice selected">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/></svg></div>
+                <div class="choice-text">Villa</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h6"/></svg></div>
+                <div class="choice-text">Apartment</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M5 21V8l7-5 7 5v13M5 14h14"/></svg></div>
+                <div class="choice-text">Townhouse</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M3 21V10l9-7 9 7v11M9 21V14h6v7"/></svg></div>
+                <div class="choice-text">Penthouse</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="1"/><path d="M2 10h20"/></svg></div>
+                <div class="choice-text">Plot / Land</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg></div>
+                <div class="choice-text">Other</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Listing purpose<span class="field-required">required</span></div>
+            <div class="choice-grid">
+              <div class="choice selected">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M5 5h11a3.5 3.5 0 010 7H5"/></svg></div>
+                <div class="choice-text">For sale</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/><rect x="9" y="13" width="6" height="8"/></svg></div>
+                <div class="choice-text">For rent</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Location</div>
+
+          <div class="field">
+            <div class="field-label">Community<span class="field-required">required</span></div>
+            <input class="field-input" placeholder="e.g. The Meadows" value="The Meadows" />
+            <div class="field-hint">Start typing and we'll suggest registered Dubai communities.</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Sub-community<span class="field-optional">optional</span></div>
+              <input class="field-input" placeholder="e.g. Meadows 7" value="Meadows 7" />
+            </div>
+            <div class="field">
+              <div class="field-label">Tower / Building<span class="field-optional">optional</span></div>
+              <input class="field-input" placeholder="Apartments only" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Address (internal only)<span class="field-optional">optional</span></div>
+            <input class="field-input" placeholder="Plot/Villa number — never shown publicly" />
+            <div class="field-hint">For your records only. Never appears on the public page.</div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">What buyers will see</div>
+
+          <div class="field">
+            <div class="field-label">Page title<span class="field-required">required</span></div>
+            <div style="display: flex; gap: 8px; align-items: stretch;">
+              <input class="field-input" placeholder="e.g. 4-bedroom villa with private pool" value="4-bedroom villa with private pool" style="flex: 1;" id="pageTitleInput" />
+              <button class="btn-ai-suggest" onclick="suggestTitle()">
+                <span class="btn-ai-suggest-icon">
+                  <svg viewBox="0 0 24 24"><path d="M12 2L9 9l-7 .8 5.2 4.6L5 22l7-4 7 4-1.2-7.6L23 9.8 16 9z"/></svg>
+                </span>
+                AI suggest
+              </button>
+            </div>
+            <div class="field-hint">This is the headline at the top of your public page — used by Google and AI models. <a style="color: var(--accent); text-decoration: underline; cursor: pointer;" onclick="suggestTitle()">Let AI write it for you</a>, or write your own.</div>
+
+            <div id="aiTitleSuggestions" style="display: none; margin-top: 10px;">
+              <div class="ai-suggest-label">Pick one, or regenerate for more options</div>
+              <div class="ai-suggest-list">
+                <div class="ai-suggest-row" onclick="useTitle(this)">4-bedroom Type 7 villa with private pool · The Meadows</div>
+                <div class="ai-suggest-row" onclick="useTitle(this)">Refurbished 4BR family villa with heated pool, Meadows 7</div>
+                <div class="ai-suggest-row" onclick="useTitle(this)">Landscaped 4-bedroom villa on 5,200 sqft plot — The Meadows</div>
+              </div>
+              <button class="ai-suggest-regen" onclick="regenTitles()">
+                <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                Regenerate
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="side-hint">
+          <div class="side-hint-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          </div>
+          <h5>What gets shown publicly?</h5>
+          <p>Your <strong>community, sub-community, page title, and property type</strong> appear on the public page.</p>
+          <p>The plot/villa number you enter stays internal — it's only for your records.</p>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <div class="step-footer-left">
+          <button class="btn btn-ghost" onclick="exitWizard()">Cancel</button>
+        </div>
+        <div class="step-footer-right">
+          <button class="btn btn-primary" onclick="nextStep()">Continue<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: SPECS & PRICE ── -->
+    <div class="step-screen" data-screen="2">
+      <div class="step-eyebrow">Step 2 of 6</div>
+      <h1 class="step-title">Size, price, and the key details</h1>
+      <p class="step-sub">The numbers buyers look for first. All editable later — you can always come back.</p>
+
+      <div class="with-hint">
+        <div>
+
+          <div class="field-group-title">Configuration</div>
+
+          <div class="field-row-4" id="configRow">
+            <div class="field">
+              <div class="field-label">Bedrooms</div>
+              <select class="field-select">
+                <option>Studio</option>
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option selected>4</option>
+                <option>5</option>
+                <option>6+</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Bathrooms</div>
+              <select class="field-select">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option selected>5</option>
+                <option>6+</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Built-up</div>
+              <div class="field-suffix">
+                <input class="field-input" value="3,850" />
+                <span class="suffix">sqft</span>
+              </div>
+            </div>
+            <div class="field" id="plotField">
+              <div class="field-label">Plot size</div>
+              <div class="field-suffix">
+                <input class="field-input" value="5,200" />
+                <span class="suffix">sqft</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Pricing</div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Asking price<span class="field-required">required</span></div>
+              <div class="field-prefix">
+                <span class="prefix">AED</span>
+                <input class="field-input" value="8,500,000" />
+              </div>
+              <div class="field-hint">Calculated PSQF: <strong>AED 2,208/sqft</strong></div>
+            </div>
+            <div class="field">
+              <div class="field-label">Commission<span class="field-optional">internal</span></div>
+              <div class="field-suffix">
+                <input class="field-input" placeholder="2.0" />
+                <span class="suffix">%</span>
+              </div>
+              <div class="field-hint">For your records only.</div>
+            </div>
+          </div>
+
+          <div class="toggle-row recommended">
+            <div class="toggle-row-text">
+              <div class="toggle-row-title">Show price publicly <span class="recommended-tag">Recommended</span></div>
+              <div class="toggle-row-desc">When on, the price appears on your public page. When off, it shows "Price on request" — useful for off-market or discretion listings.</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Key details</div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Furnishing</div>
+              <select class="field-select">
+                <option>Unfurnished</option>
+                <option>Semi-furnished</option>
+                <option selected>Furnished</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">View</div>
+              <input class="field-input" placeholder="e.g. Burj Khalifa, garden, marina" value="Garden &amp; pool" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Parking</div>
+              <select class="field-select">
+                <option>None</option>
+                <option>1</option>
+                <option selected>2</option>
+                <option>3</option>
+                <option>4+</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Completion status</div>
+              <select class="field-select">
+                <option selected>Vacant on transfer</option>
+                <option>Tenanted (rented out)</option>
+                <option>Owner-occupied</option>
+                <option>Off-plan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Top features <span style="font-weight: 400; color: var(--quiet); text-transform: none; letter-spacing: normal;">— used by AI to write your description</span></div>
+
+          <div class="field">
+            <div class="field-label">What makes this property stand out?<span class="field-optional">recommended</span></div>
+            <div class="field-hint" style="margin-top: 0; margin-bottom: 10px;">Add up to 4. These show as feature cards on your page <strong>and</strong> feed the AI when it writes your description in the next step.</div>
+            <div class="field" style="margin-bottom: 10px;">
+              <input class="field-input" value="Private heated pool — refinished 2024" />
+            </div>
+            <div class="field" style="margin-bottom: 10px;">
+              <input class="field-input" value="Type 7 layout — most sought-after in community" />
+            </div>
+            <div class="field" style="margin-bottom: 10px;">
+              <input class="field-input" value="Vacant on transfer — move in immediately" />
+            </div>
+            <div class="field" style="margin-bottom: 10px;">
+              <input class="field-input" value="School catchment — Sunmarke + Dubai British" />
+            </div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Compliance</div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">DLD permit number<span class="field-required">required</span></div>
+              <input class="field-input" placeholder="e.g. 7129384510" />
+              <div class="field-hint">Required to publish under RERA guidelines.</div>
+            </div>
+            <div class="field">
+              <div class="field-label">Service charge<span class="field-optional">optional</span></div>
+              <div class="field-suffix">
+                <input class="field-input" placeholder="0" />
+                <span class="suffix">/sqft</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="side-hint">
+          <div class="side-hint-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
+          </div>
+          <h5>What helps you rank?</h5>
+          <p>Filled-in specs help your page rank on Google and get indexed by AI models. <strong>The more complete, the better.</strong></p>
+          <p>The DLD permit number is required by RERA before publication.</p>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <div class="step-footer-left">
+          <button class="btn btn-outline" onclick="prevStep()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+        </div>
+        <div class="step-footer-right">
+          <button class="btn btn-ghost" onclick="exitWizard()">Save &amp; exit</button>
+          <button class="btn btn-primary" onclick="nextStep()">Continue<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: AI DESCRIPTION ── -->
+    <div class="step-screen" data-screen="3">
+      <div class="step-eyebrow">Step 3 of 6</div>
+      <h1 class="step-title">Your AI-written description</h1>
+      <p class="step-sub">We've drafted a unique, SEO-optimised description based on the details you've added. Edit anything you like, or regenerate for a fresh take.</p>
+
+      <div class="with-hint">
+        <div>
+
+          <div class="ai-desc-block">
+            <div class="ai-desc-head">
+              <div class="ai-desc-eyebrow">
+                <span class="ai-desc-eyebrow-icon">
+                  <svg viewBox="0 0 24 24"><path d="M12 2L9 9l-7 .8 5.2 4.6L5 22l7-4 7 4-1.2-7.6L23 9.8 16 9z"/></svg>
+                </span>
+                AI-generated · unique
+              </div>
+              <button class="ai-desc-regen">
+                <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                Regenerate
+              </button>
+            </div>
+            <div class="ai-desc-body">
+              <p>A meticulously maintained four-bedroom Type 7 villa in The Meadows 7, offering 3,850 sqft of refined family living on a generous 5,200 sqft plot. The home opens onto a fully landscaped garden with a private heated pool and east-facing terrace — ideal for morning coffee or weekend entertaining.</p>
+              <p>The ground floor features open-plan living and dining flowing into a fitted kitchen with breakfast island, plus a guest bedroom suite ideal for visiting family. Upstairs, the principal suite includes a walk-in dressing area and balcony, with three further bedrooms each enjoying ensuite bathrooms.</p>
+              <p>Walking distance to Meadows Village and the lake circuit, with Sunmarke School and Dubai British School both within a four-minute drive. The Type 7 layout is widely considered the most sought-after in the community for its plot-to-built ratio and resale strength.</p>
+            </div>
+            <div class="ai-desc-foot">
+              <span>Word count: 142 · Reading time: ~1 min · Built from your top features</span>
+              <a>Edit manually</a>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top: 20px;">
+            <div class="field-label">Tone of voice<span class="field-optional">optional</span></div>
+            <div class="choice-grid-3">
+              <div class="choice selected">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M12 2L9 9l-7 .8 5.2 4.6L5 22l7-4 7 4-1.2-7.6L23 9.8 16 9z"/></svg></div>
+                <div class="choice-text">Refined</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></div>
+                <div class="choice-text">Warm &amp; family</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></div>
+                <div class="choice-text">Investor</div>
+              </div>
+            </div>
+            <div class="field-hint">Pick a tone and regenerate — the AI rewrites accordingly.</div>
+          </div>
+
+        </div>
+
+        <div class="side-hint">
+          <div class="side-hint-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L9 9l-7 .8 5.2 4.6L5 22l7-4 7 4-1.2-7.6L23 9.8 16 9z"/></svg>
+          </div>
+          <h5>Why AI descriptions?</h5>
+          <p>Every property gets a <strong>one-of-a-kind</strong> description. No duplicate-content penalty from Google. No copy-paste flagging from AI crawlers.</p>
+          <p>Regenerate up to 5 times for free — pick the version you like.</p>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <div class="step-footer-left">
+          <button class="btn btn-outline" onclick="prevStep()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+        </div>
+        <div class="step-footer-right">
+          <button class="btn btn-ghost" onclick="exitWizard()">Save &amp; exit</button>
+          <button class="btn btn-primary" onclick="nextStep()">Continue<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: PHOTOS ── -->
+    <div class="step-screen" data-screen="4">
+      <div class="step-eyebrow">Step 4 of 6</div>
+      <h1 class="step-title">Upload photos</h1>
+      <p class="step-sub">The hero photo is what sells the page. Add 5+ for the best results — drag to reorder, click the badge to set hero.</p>
+
+      <div class="with-hint">
+        <div>
+
+          <div class="photo-upload-zone">
+            <div class="photo-upload-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            </div>
+            <div class="photo-upload-title">Drop photos here, or click to browse</div>
+            <div class="photo-upload-hint">JPG or PNG · up to <strong>10 MB</strong> per photo · max 20 photos</div>
+          </div>
+
+          <div class="field-group-title">Your gallery <span style="font-weight: 400; color: var(--quiet); text-transform: none; letter-spacing: normal;">— 5 of 20 added</span></div>
+
+          <div class="photo-grid">
+            <div class="photo-tile hero p1">
+              <div class="photo-tile-tag">HERO</div>
+              <div class="photo-tile-remove">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+            </div>
+            <div class="photo-tile p2">
+              <div class="photo-tile-remove">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+            </div>
+            <div class="photo-tile p3">
+              <div class="photo-tile-remove">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+            </div>
+            <div class="photo-tile p4">
+              <div class="photo-tile-remove">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+            </div>
+            <div class="photo-tile p5">
+              <div class="photo-tile-remove">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+            </div>
+            <div class="photo-tile empty">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="photo-tile empty">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="photo-tile empty">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="side-hint">
+          <div class="side-hint-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <h5>Photo tips</h5>
+          <p>The <strong>hero photo</strong> is what shows on Google previews, social shares, and the top of your page.</p>
+          <p>Wide-angle, daylight, no clutter. Landscape orientation works best — portrait photos crop badly on desktop.</p>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <div class="step-footer-left">
+          <button class="btn btn-outline" onclick="prevStep()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+        </div>
+        <div class="step-footer-right">
+          <button class="btn btn-ghost" onclick="exitWizard()">Save &amp; exit</button>
+          <button class="btn btn-primary" onclick="nextStep()">Continue<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 5: URL & OPTIONS ── -->
+    <div class="step-screen" data-screen="5">
+      <div class="step-eyebrow">Step 5 of 6</div>
+      <h1 class="step-title">Your URL and page options</h1>
+      <p class="step-sub">Set how the URL looks, and choose what extras to show on the public page.</p>
+
+      <div class="with-hint">
+        <div>
+
+          <div class="field-group-title">URL</div>
+
+          <div class="url-builder">
+            <div class="url-builder-label">Your default URL</div>
+            <div class="url-builder-row">
+              <span class="url-builder-prefix">agentpages.io/sarah-bennett/</span>
+              <span class="url-builder-slug">4br-villa-meadows-7-pool</span>
+              <span class="url-builder-edit">Edit slug</span>
+            </div>
+            <div class="url-builder-hint">
+              Auto-generated from your title. You can edit the slug anytime — it'll redirect old URLs automatically.
+            </div>
+            <div class="url-builder-upgrade">
+              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              Want a custom URL like 4bedroomvillainmeadows.com? Add one
+            </div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Page extras</div>
+
+          <div class="toggle-row">
+            <div class="toggle-row-text">
+              <div class="toggle-row-title">Show community sold pricing</div>
+              <div class="toggle-row-desc">Pulls DLD transaction data for similar properties in the area. Shown as a discreet pricing block under specs.</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-row-text">
+              <div class="toggle-row-title">Show location map</div>
+              <div class="toggle-row-desc">Stylised map showing the community + key landmarks. Exact address never shown.</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-row-text">
+              <div class="toggle-row-title">Show nearby attractions</div>
+              <div class="toggle-row-desc">Schools, malls, metro, parks within a 15-minute drive. Auto-populated.</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-row-text">
+              <div class="toggle-row-title">Submit to AI models</div>
+              <div class="toggle-row-desc">Index this page with ChatGPT, Claude, Gemini, Perplexity, and Copilot on publish.</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+
+          <div class="field-group-title" style="margin-top: 28px;">Lead capture</div>
+
+          <div class="field">
+            <div class="field-label">Where should leads go?</div>
+            <div class="choice-grid">
+              <div class="choice selected">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg></div>
+                <div class="choice-text">Inbox + WhatsApp + email</div>
+              </div>
+              <div class="choice">
+                <div class="choice-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg></div>
+                <div class="choice-text">Inbox only</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="side-hint">
+          <div class="side-hint-icon">
+            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <h5>The URL matters</h5>
+          <p>Buyers remember <strong>memorable URLs</strong>. Use one you can read out on a call or print on a flyer.</p>
+          <p>You can buy custom domains per property on Pro and above.</p>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <div class="step-footer-left">
+          <button class="btn btn-outline" onclick="prevStep()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+        </div>
+        <div class="step-footer-right">
+          <button class="btn btn-ghost" onclick="exitWizard()">Save &amp; exit</button>
+          <button class="btn btn-primary" onclick="nextStep()">Continue<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 6: REVIEW & PUBLISH ── -->
+    <div class="step-screen" data-screen="6">
+      <div class="step-eyebrow">Step 6 of 6 · Final check</div>
+      <h1 class="step-title">Ready to go live</h1>
+      <p class="step-sub">A quick check before we publish. Click any section to jump back and edit. When you hit publish, your page goes live and we start submitting to search engines and AI models.</p>
+
+      <div class="publish-summary">
+        <div class="publish-summary-head">
+          <div class="publish-summary-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="publish-summary-title">Everything checks out — here's what happens on publish</div>
+        </div>
+        <div class="publish-summary-list">
+          <div class="publish-summary-item">Your page goes live at <strong>agentpages.io/sarah-bennett/4br-villa-meadows-7-pool</strong></div>
+          <div class="publish-summary-item">We submit your listing to Google, ChatGPT, Claude, Gemini, Perplexity, and Copilot</div>
+          <div class="publish-summary-item">Lead capture form is wired to your WhatsApp + email</div>
+          <div class="publish-summary-item">Sold pricing data refreshes weekly from DLD records</div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-card-head">
+          <div class="review-card-title">Basics</div>
+          <button class="review-card-edit" onclick="goStep(1)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        </div>
+        <div class="review-grid">
+          <div class="review-key">Type</div>
+          <div class="review-val">Villa · For sale</div>
+          <div class="review-key">Community</div>
+          <div class="review-val">The Meadows · Meadows 7</div>
+          <div class="review-key">Page title</div>
+          <div class="review-val">4-bedroom villa with private pool</div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-card-head">
+          <div class="review-card-title">Specs &amp; price</div>
+          <button class="review-card-edit" onclick="goStep(2)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        </div>
+        <div class="review-grid">
+          <div class="review-key">Configuration</div>
+          <div class="review-val">4 beds · 5 baths · 3,850 sqft built · 5,200 sqft plot</div>
+          <div class="review-key">Price</div>
+          <div class="review-val">AED 8,500,000 · AED 2,208 psqft · Shown publicly</div>
+          <div class="review-key">Furnishing</div>
+          <div class="review-val">Furnished</div>
+          <div class="review-key">View</div>
+          <div class="review-val">Garden &amp; pool</div>
+          <div class="review-key">Completion</div>
+          <div class="review-val">Vacant on transfer</div>
+          <div class="review-key">Top features</div>
+          <div class="review-val">4 added — pool, Type 7 layout, vacant on transfer, school catchment</div>
+          <div class="review-key">DLD permit</div>
+          <div class="review-val muted">Not yet added — required to publish</div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-card-head">
+          <div class="review-card-title">AI description</div>
+          <button class="review-card-edit" onclick="goStep(3)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        </div>
+        <div class="review-grid">
+          <div class="review-key">Description</div>
+          <div class="review-val">142 words · 3 paragraphs · unique to this listing</div>
+          <div class="review-key">Tone</div>
+          <div class="review-val">Refined</div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-card-head">
+          <div class="review-card-title">Photos</div>
+          <button class="review-card-edit" onclick="goStep(4)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        </div>
+        <div class="review-grid">
+          <div class="review-key">Gallery</div>
+          <div class="review-val" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div class="review-photos-row">
+              <div class="review-photo-thumb p1"></div>
+              <div class="review-photo-thumb p2"></div>
+              <div class="review-photo-thumb p3"></div>
+              <div class="review-photo-thumb p4"></div>
+              <div class="review-photo-thumb p5"></div>
+            </div>
+            <span class="review-photos-count">5 photos uploaded</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-card-head">
+          <div class="review-card-title">URL &amp; options</div>
+          <button class="review-card-edit" onclick="goStep(5)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        </div>
+        <div class="review-grid">
+          <div class="review-key">URL</div>
+          <div class="review-val" style="font-family: 'Inter', monospace; font-size: 12.5px;">agentpages.io/sarah-bennett/4br-villa-meadows-7-pool</div>
+          <div class="review-key">Page extras</div>
+          <div class="review-val">Sold pricing · Map · Nearby · AI submission — all on</div>
+          <div class="review-key">Lead capture</div>
+          <div class="review-val">Inbox + WhatsApp + email</div>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <div class="step-footer-left">
+          <button class="btn btn-outline" onclick="prevStep()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+        </div>
+        <div class="step-footer-right">
+          <button class="btn btn-ghost">Save as draft</button>
+          <button class="btn btn-primary publish" onclick="publishPage()">
+            Publish now
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+const stepLabels = ['', 'The basics', 'Specs &amp; price', 'AI description', 'Photos', 'URL &amp; options', 'Review &amp; publish'];
+
+function updateProgress() {
+  const pct = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressNum').textContent = currentStep;
+  document.getElementById('progressLabel').innerHTML = stepLabels[currentStep];
+}
+
+function showStep(n) {
+  // Hide all step screens
+  document.querySelectorAll('.step-screen').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.step-screen[data-screen="${n}"]`).classList.add('active');
+  
+  // Update rail
+  document.querySelectorAll('.rail-step').forEach((s, i) => {
+    s.classList.remove('active');
+    const stepNum = i + 1;
+    if (stepNum < n) {
+      s.classList.remove('locked');
+      s.classList.add('done');
+      // Mark marker as done
+      const marker = s.querySelector('.rail-step-marker');
+      marker.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
+    } else if (stepNum === n) {
+      s.classList.remove('locked', 'done');
+      s.classList.add('active');
+      const marker = s.querySelector('.rail-step-marker');
+      marker.textContent = stepNum;
+    } else {
+      // Future steps: only unlock if previously visited
+      if (!s.classList.contains('done')) {
+        s.classList.add('locked');
+      } else {
+        s.classList.remove('locked');
+      }
+      const marker = s.querySelector('.rail-step-marker');
+      if (!s.classList.contains('done')) marker.textContent = stepNum;
+    }
+  });
+  
+  currentStep = n;
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep() {
+  if (currentStep < totalSteps) {
+    // Mark current as done before moving
+    const railStep = document.querySelector(`.rail-step[data-step="${currentStep}"]`);
+    railStep.classList.add('done');
+    railStep.classList.remove('active');
+    
+    showStep(currentStep + 1);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 1) {
+    showStep(currentStep - 1);
+  }
+}
+
+function goStep(n) {
+  const railStep = document.querySelector(`.rail-step[data-step="${n}"]`);
+  if (railStep.classList.contains('locked')) return;
+  
+  // Mark intermediate steps as done if jumping forward
+  if (n > currentStep) {
+    for (let i = currentStep; i < n; i++) {
+      const s = document.querySelector(`.rail-step[data-step="${i}"]`);
+      s.classList.add('done');
+    }
+  }
+  
+  showStep(n);
+}
+
+function exitWizard() {
+  if (confirm('Save your progress and exit? You can come back to this draft anytime.')) {
+    alert('Draft saved! In the real app this would return you to your properties list.');
+  }
+}
+
+function publishPage() {
+  alert('🎉 Property published!\n\nIn the real app this would:\n• Push the page live\n• Submit to Google + 5 AI models\n• Notify any matching saved searches\n• Take you to the live property page');
+}
+
+// Toggle interactions
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('on'));
+});
+
+// Property type tracking — controls plot field visibility
+let propertyType = 'Villa'; // default
+const typesWithPlot = ['Villa', 'Townhouse', 'Plot / Land'];
+
+function updatePlotVisibility() {
+  const plotField = document.getElementById('plotField');
+  const configRow = document.getElementById('configRow');
+  if (!plotField || !configRow) return;
+
+  if (typesWithPlot.includes(propertyType)) {
+    plotField.style.display = '';
+    configRow.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+  } else {
+    plotField.style.display = 'none';
+    configRow.style.gridTemplateColumns = '1fr 1fr 1fr';
+  }
+}
+
+// Choice card interactions
+document.querySelectorAll('.choice-grid, .choice-grid-3').forEach(group => {
+  group.addEventListener('click', e => {
+    const choice = e.target.closest('.choice');
+    if (!choice) return;
+    group.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+    choice.classList.add('selected');
+
+    // If this is the property type choice grid, update plot visibility
+    const text = choice.querySelector('.choice-text');
+    if (text) {
+      const val = text.textContent.trim();
+      if (['Villa', 'Apartment', 'Townhouse', 'Penthouse', 'Plot / Land', 'Other'].includes(val)) {
+        propertyType = val;
+        updatePlotVisibility();
+      }
+    }
+  });
+});
+
+// AI title suggestion functions
+function suggestTitle() {
+  const sugBox = document.getElementById('aiTitleSuggestions');
+  if (sugBox) {
+    sugBox.style.display = 'block';
+    sugBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function useTitle(el) {
+  const input = document.getElementById('pageTitleInput');
+  if (input && el) {
+    input.value = el.textContent.trim();
+    document.getElementById('aiTitleSuggestions').style.display = 'none';
+  }
+}
+
+function regenTitles() {
+  const rows = document.querySelectorAll('.ai-suggest-row');
+  const variants = [
+    ['Spacious 4BR family villa with pool in The Meadows', 'Beautifully maintained 4-bed villa — Meadows 7, private pool', 'Type 7 villa with heated pool and landscaped gardens'],
+    ['Move-in ready 4-bedroom villa · pool · Meadows 7', 'Family-sized 4BR with private pool in The Meadows', 'Premium Type 7 villa, vacant on transfer · The Meadows']
+  ];
+  const pick = variants[Math.floor(Math.random() * variants.length)];
+  rows.forEach((r, i) => { r.textContent = pick[i]; });
+}
+
+// Init
+updateProgress();
+</script>
+
+</body>
+</html>

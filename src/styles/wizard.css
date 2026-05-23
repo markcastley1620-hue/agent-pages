@@ -271,3 +271,21 @@
   .wiz-step-footer-right { flex-direction: column; }
   .wiz-btn { width: 100%; justify-content: center; }
 }
+
+/* ── ENHANCED MOBILE (480px and below) ── */
+@media (max-width: 480px) {
+  .wz-root .topbar { padding: 0 12px; }
+  .wz-root .topbar-name { font-size: 13px; }
+  .wz-root .main { padding: 24px 16px 80px; }
+  .wz-root .step-title { font-size: 20px; }
+  .wz-root .step-sub { font-size: 13.5px; }
+  .wz-root .choice-grid, .wz-root .choice-grid-3 { grid-template-columns: 1fr 1fr; }
+  .wz-root .field-row, .wz-root .field-row-3, .wz-root .field-row-4 { grid-template-columns: 1fr; }
+  .wz-root .photo-grid { grid-template-columns: 1fr 1fr; }
+  .wz-root .photo-tile.hero { grid-column: span 2; }
+  .wz-root .btn { font-size: 13px; padding: 10px 16px; }
+  .wz-root .btn-primary.publish { font-size: 14px; }
+  .wz-root .review-grid { gap: 2px 0; }
+  .wz-root .url-builder-row { flex-wrap: wrap; gap: 4px; }
+  .wz-root .ai-desc-foot { flex-direction: column; gap: 4px; }
+}
