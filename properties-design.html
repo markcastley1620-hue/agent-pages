@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Pages — Properties</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f1419; --ink-soft: #2c343d; --muted: #5a6470; --quiet: #8b95a0;
+  --line: #e6e8eb; --line-soft: #f0f2f4; --paper: #ffffff; --paper-warm: #fbfaf7;
+  --accent: #2d5a4f; --accent-hover: #234a40; --accent-soft: #e8f0ed; --accent-bright: #3d8a76;
+  --highlight: #f6f1e8; --highlight-line: #ebe3d2; --highlight-text: #8b6f3a;
+  --signal: #c2603a; --signal-soft: #fbeee7;
+  --share: #4a6fa5; --share-soft: #eaeff7;
+}
+
+html, body { font-family: 'Inter', sans-serif; background: var(--paper-warm); color: var(--ink); -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; line-height: 1.5; min-height: 100vh; }
+
+/* TOP BAR */
+.topbar { height: 60px; background: #fff; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
+.topbar-left { display: flex; align-items: center; gap: 24px; }
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+.topbar-name { font-size: 14.5px; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+.topbar-nav { display: flex; padding-left: 24px; border-left: 1px solid var(--line-soft); gap: 4px; }
+.topbar-nav a { padding: 7px 12px; font-size: 13px; color: var(--muted); text-decoration: none; font-weight: 500; border-radius: 7px; transition: all .12s; }
+.topbar-nav a:hover { background: var(--line-soft); color: var(--ink); }
+.topbar-nav a.active { background: var(--ink); color: #fff; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-hover)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+.topbar-bell { width: 32px; height: 32px; border-radius: 8px; background: transparent; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+.topbar-bell:hover { background: var(--line-soft); }
+.topbar-bell svg { width: 16px; height: 16px; stroke: var(--ink); fill: none; stroke-width: 2; }
+.topbar-bell-dot { position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-bright); border: 1.5px solid #fff; }
+
+/* PAGE HEAD */
+.page-head { padding: 32px 32px 0; max-width: 1400px; margin: 0 auto; }
+.page-head-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.page-title { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 4px; }
+.page-sub { font-size: 14px; color: var(--muted); }
+.page-actions { display: flex; gap: 8px; }
+.btn { padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .12s; border: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn svg { width: 13px; height: 13px; stroke-width: 2; fill: none; stroke: currentColor; }
+.btn-outline { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.btn-outline:hover { border-color: var(--ink); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+
+/* Plan usage banner */
+.plan-banner { background: #fff; border: 1px solid var(--line-soft); border-radius: 12px; padding: 18px 22px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.plan-banner-left { display: flex; align-items: center; gap: 16px; }
+.plan-banner-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.plan-banner-icon svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+.plan-banner-text-title { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; margin-bottom: 4px; }
+.plan-banner-bar { display: flex; align-items: center; gap: 12px; }
+.plan-banner-progress { width: 240px; height: 6px; background: var(--line-soft); border-radius: 3px; overflow: hidden; }
+.plan-banner-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-bright)); border-radius: 3px; }
+.plan-banner-progress-text { font-size: 12px; color: var(--muted); font-weight: 500; }
+.plan-banner-progress-text strong { color: var(--ink); font-weight: 600; }
+.plan-banner-right { display: flex; align-items: center; gap: 10px; }
+.plan-banner-bill { font-size: 12.5px; color: var(--muted); }
+.plan-banner-bill strong { color: var(--ink); font-weight: 600; }
+
+/* Toolbar */
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 16px; flex-wrap: wrap; }
+.toolbar-tabs { display: flex; gap: 3px; background: #fff; border: 1px solid var(--line-soft); border-radius: 10px; padding: 4px; }
+.toolbar-tab { padding: 7px 14px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-radius: 7px; display: inline-flex; align-items: center; gap: 7px; transition: all .12s; }
+.toolbar-tab:hover { color: var(--ink); }
+.toolbar-tab.active { background: var(--ink); color: #fff; font-weight: 600; }
+.toolbar-tab-count { padding: 1px 6px; background: rgba(255,255,255,0.15); border-radius: 4px; font-size: 10.5px; font-weight: 600; }
+.toolbar-tab:not(.active) .toolbar-tab-count { background: var(--line-soft); color: var(--muted); }
+
+.toolbar-right { display: flex; align-items: center; gap: 8px; }
+.toolbar-search { display: flex; align-items: center; gap: 7px; padding: 7px 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; color: var(--quiet); min-width: 220px; }
+.toolbar-search:focus-within { border-color: var(--accent); }
+.toolbar-search svg { width: 13px; height: 13px; stroke: var(--quiet); stroke-width: 2; fill: none; }
+.toolbar-search input { flex: 1; border: none; outline: none; font-family: inherit; font-size: 13px; background: transparent; color: var(--ink); }
+.toolbar-search input::placeholder { color: var(--quiet); }
+.view-toggle { display: flex; padding: 2px; background: var(--line-soft); border-radius: 7px; }
+.view-toggle-btn { padding: 6px 10px; background: transparent; border: none; cursor: pointer; border-radius: 5px; font-family: inherit; }
+.view-toggle-btn svg { width: 14px; height: 14px; stroke: var(--muted); stroke-width: 2; fill: none; }
+.view-toggle-btn.active { background: #fff; }
+.view-toggle-btn.active svg { stroke: var(--ink); }
+.sort-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; font-weight: 500; color: var(--ink); cursor: pointer; font-family: inherit; }
+.sort-btn:hover { border-color: var(--ink); }
+.sort-btn svg { width: 12px; height: 12px; stroke: var(--muted); stroke-width: 2; fill: none; }
+
+/* PROPERTIES TABLE */
+.properties-wrap { max-width: 1400px; margin: 0 auto; padding: 0 32px 60px; }
+.properties-table { background: #fff; border: 1px solid var(--line-soft); border-radius: 14px; overflow: hidden; }
+.table-head { display: grid; grid-template-columns: 80px 1fr 110px 110px 110px 100px 60px; gap: 16px; padding: 12px 22px; background: var(--paper-warm); border-bottom: 1px solid var(--line-soft); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--quiet); font-weight: 600; align-items: center; }
+.table-head-cell { display: flex; align-items: center; gap: 4px; }
+.table-head-cell svg { width: 10px; height: 10px; stroke: var(--quiet); stroke-width: 2; fill: none; }
+
+.prop-row { display: grid; grid-template-columns: 80px 1fr 110px 110px 110px 100px 60px; gap: 16px; padding: 16px 22px; border-bottom: 1px solid var(--line-soft); align-items: center; transition: background .12s; cursor: pointer; }
+.prop-row:hover { background: var(--paper-warm); }
+.prop-row:last-child { border-bottom: none; }
+
+.prop-thumb { width: 64px; height: 48px; border-radius: 7px; position: relative; overflow: hidden; }
+.prop-thumb.t1 { background: linear-gradient(135deg, #2d3e54 0%, #1a2535 40%, #c9a872 100%); }
+.prop-thumb.t2 { background: linear-gradient(135deg, #4a5d6b 0%, #2c3a47 100%); }
+.prop-thumb.t3 { background: linear-gradient(135deg, #c4ad8a 0%, #8b7456 100%); }
+.prop-thumb.t4 { background: linear-gradient(135deg, #5a7d8b 0%, #34505f 100%); }
+.prop-thumb.t5 { background: linear-gradient(135deg, #d4c9b8 0%, #a89880 100%); }
+.prop-thumb.t6 { background: linear-gradient(135deg, #6b8378 0%, #4a5e57 100%); }
+.prop-thumb.empty { background: var(--line-soft); display: flex; align-items: center; justify-content: center; }
+.prop-thumb.empty svg { width: 16px; height: 16px; stroke: var(--quiet); stroke-width: 1.6; fill: none; }
+.prop-thumb-count { position: absolute; bottom: 4px; right: 4px; padding: 1px 5px; background: rgba(15,20,25,0.85); backdrop-filter: blur(6px); border-radius: 3px; font-size: 9px; font-weight: 600; color: #fff; }
+
+.prop-info { min-width: 0; }
+.prop-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.prop-name { font-size: 14.5px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.prop-url { font-size: 12px; color: var(--share); font-family: 'Inter', monospace; display: inline-flex; align-items: center; gap: 5px; }
+.prop-url svg { width: 10px; height: 10px; stroke: var(--share); stroke-width: 2; fill: none; flex-shrink: 0; }
+.prop-meta { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.prop-meta-dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--quiet); }
+.prop-price { font-size: 12.5px; color: var(--ink); font-weight: 600; }
+
+/* Status pill */
+.status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+.status-pill.live { background: var(--accent-soft); color: var(--accent); }
+.status-pill.live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-bright); }
+.status-pill.draft { background: var(--line-soft); color: var(--muted); }
+.status-pill.draft::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--quiet); }
+.status-pill.paused { background: var(--highlight); color: var(--highlight-text); }
+.status-pill.paused::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--highlight-text); }
+.status-pill.sold { background: #f0e4f9; color: #6b4884; }
+.status-pill.sold::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #6b4884; }
+
+/* Metric cells */
+.metric { font-size: 13px; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
+.metric-sub { font-size: 11px; color: var(--quiet); font-weight: 500; margin-top: 2px; }
+.metric.dim { color: var(--quiet); font-weight: 500; }
+
+/* Action menu button */
+.row-menu { width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .12s; }
+.row-menu:hover { background: var(--paper-warm); border-color: var(--line); }
+.row-menu svg { width: 14px; height: 14px; stroke: var(--muted); stroke-width: 2; fill: none; }
+
+/* Draft warning pill */
+.warn-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; background: var(--signal-soft); border-radius: 4px; font-size: 10px; font-weight: 600; color: var(--signal); letter-spacing: 0.02em; text-transform: uppercase; }
+.warn-pill svg { width: 9px; height: 9px; stroke: var(--signal); stroke-width: 2.4; fill: none; }
+
+@media (max-width: 980px) {
+  .topbar-nav { display: none; }
+  .topbar { padding: 0 16px; }
+  .page-head { padding: 24px 16px 0; }
+  .page-title { font-size: 22px; }
+  .plan-banner { flex-direction: column; align-items: flex-start; }
+  .plan-banner-progress { width: 100%; }
+  .toolbar-search { min-width: 0; flex: 1; }
+  .properties-wrap { padding: 0 16px 48px; }
+  .table-head { display: none; }
+  .prop-row { grid-template-columns: 80px 1fr 40px; gap: 12px; }
+  .prop-row > :nth-child(3), .prop-row > :nth-child(4), .prop-row > :nth-child(5), .prop-row > :nth-child(6) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <div class="topbar-logo">a</div>
+      <div class="topbar-name">Agent Pages</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="#">Dashboard</a>
+      <a href="#" class="active">Properties</a>
+      <a href="#">Leads</a>
+      <a href="#">Portfolio</a>
+      <a href="#">Analytics</a>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-bell">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="topbar-bell-dot"></div>
+    </button>
+    <div class="topbar-avatar">SB</div>
+  </div>
+</div>
+
+<!-- PAGE HEAD -->
+<div class="page-head">
+  <div class="page-head-top">
+    <div>
+      <h1 class="page-title">Properties</h1>
+      <p class="page-sub">Every property page you've published or drafted — live, paused, sold, or in progress.</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-outline">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Export
+      </button>
+      <button class="btn btn-primary">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Add property
+      </button>
+    </div>
+  </div>
+
+  <!-- Plan usage banner -->
+  <div class="plan-banner">
+    <div class="plan-banner-left">
+      <div class="plan-banner-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/><path d="M9 21v-8h6v8"/></svg>
+      </div>
+      <div>
+        <div class="plan-banner-text-title">Pro plan · 10–19 properties</div>
+        <div class="plan-banner-bar">
+          <div class="plan-banner-progress">
+            <div class="plan-banner-progress-fill" style="width: 36%;"></div>
+          </div>
+          <div class="plan-banner-progress-text"><strong>7</strong> live · 12 of 19 slots remaining</div>
+        </div>
+      </div>
+    </div>
+    <div class="plan-banner-right">
+      <div class="plan-banner-bill">Next bill <strong>$100</strong> on <strong>15 Jun</strong></div>
+      <button class="btn btn-outline">Manage plan</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-tabs">
+      <div class="toolbar-tab active">All<span class="toolbar-tab-count">11</span></div>
+      <div class="toolbar-tab">Live<span class="toolbar-tab-count">7</span></div>
+      <div class="toolbar-tab">Drafts<span class="toolbar-tab-count">2</span></div>
+      <div class="toolbar-tab">Paused<span class="toolbar-tab-count">1</span></div>
+      <div class="toolbar-tab">Sold<span class="toolbar-tab-count">1</span></div>
+    </div>
+    <div class="toolbar-right">
+      <div class="toolbar-search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search properties..." />
+      </div>
+      <button class="sort-btn">
+        Sort: Most recent
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" title="Table view">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <button class="view-toggle-btn" title="Grid view">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROPERTIES TABLE -->
+<div class="properties-wrap">
+  <div class="properties-table">
+
+    <div class="table-head">
+      <div></div>
+      <div class="table-head-cell">Property</div>
+      <div class="table-head-cell">Status</div>
+      <div class="table-head-cell">Views<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="table-head-cell">Leads<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="table-head-cell">Updated</div>
+      <div></div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t1"><div class="prop-thumb-count">12</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">4-bedroom villa with private pool</div>
+        </div>
+        <div class="prop-meta">
+          <span>The Meadows 7 · 4 beds · 3,850 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 8.5M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>4bedroomvillainmeadows.com</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">847</div>
+        <div class="metric-sub">+34% this week</div>
+      </div>
+      <div>
+        <div class="metric">12</div>
+        <div class="metric-sub">+5 this week</div>
+      </div>
+      <div>
+        <div class="metric">2h ago</div>
+        <div class="metric-sub">12 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t2"><div class="prop-thumb-count">9</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">High-floor 2BR with Burj Khalifa view</div>
+        </div>
+        <div class="prop-meta">
+          <span>Burj Vista · 2 beds · 1,420 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 3.2M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>burjvista38thfloor.com</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">512</div>
+        <div class="metric-sub">+18% this week</div>
+      </div>
+      <div>
+        <div class="metric">9</div>
+        <div class="metric-sub">+3 this week</div>
+      </div>
+      <div>
+        <div class="metric">Yesterday</div>
+        <div class="metric-sub">28 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t3"><div class="prop-thumb-count">15</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Beachfront villa with private access</div>
+        </div>
+        <div class="prop-meta">
+          <span>Palm Frond M · 5 beds · 7,200 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 24M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>agentpages.io/sarah-bennett/palm-frond-m-beachfront</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">1,243</div>
+        <div class="metric-sub">+62% this week</div>
+      </div>
+      <div>
+        <div class="metric">23</div>
+        <div class="metric-sub">+8 this week</div>
+      </div>
+      <div>
+        <div class="metric">3 days ago</div>
+        <div class="metric-sub">45 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t4"><div class="prop-thumb-count">11</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Custom 6-bedroom estate on the golf course</div>
+        </div>
+        <div class="prop-meta">
+          <span>Sector E · Emirates Hills · 6 beds · 14,000 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">POR</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>agentpages.io/sarah-bennett/emirates-hills-estate-e</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">389</div>
+        <div class="metric-sub">+12% this week</div>
+      </div>
+      <div>
+        <div class="metric">6</div>
+        <div class="metric-sub">+2 this week</div>
+      </div>
+      <div>
+        <div class="metric">5 days ago</div>
+        <div class="metric-sub">21 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t5"><div class="prop-thumb-count">8</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Park-facing 5-bedroom townhouse</div>
+        </div>
+        <div class="prop-meta">
+          <span>Maple · Dubai Hills · 5 beds · 4,400 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 6.8M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>agentpages.io/sarah-bennett/maple-5br-townhouse</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">624</div>
+        <div class="metric-sub">+22% this week</div>
+      </div>
+      <div>
+        <div class="metric">14</div>
+        <div class="metric-sub">+4 this week</div>
+      </div>
+      <div>
+        <div class="metric">1 week ago</div>
+        <div class="metric-sub">38 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t6"><div class="prop-thumb-count">10</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Lagoon-facing 3BR apartment</div>
+        </div>
+        <div class="prop-meta">
+          <span>Creek Beach · 3 beds · 1,890 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 4.1M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>agentpages.io/sarah-bennett/creek-beach-3br-lagoon</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">298</div>
+        <div class="metric-sub">+8% this week</div>
+      </div>
+      <div>
+        <div class="metric">3</div>
+        <div class="metric-sub">+1 this week</div>
+      </div>
+      <div>
+        <div class="metric">2 weeks ago</div>
+        <div class="metric-sub">19 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <div class="prop-thumb t2"><div class="prop-thumb-count">6</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Penthouse with double-height living</div>
+        </div>
+        <div class="prop-meta">
+          <span>Address Sky View · 3 beds · 3,100 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 12.75M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>agentpages.io/sarah-bennett/address-sky-view-penthouse</a>
+        </div>
+      </div>
+      <div><span class="status-pill live">Live</span></div>
+      <div>
+        <div class="metric">456</div>
+        <div class="metric-sub">+4% this week</div>
+      </div>
+      <div>
+        <div class="metric">7</div>
+        <div class="metric-sub">no change</div>
+      </div>
+      <div>
+        <div class="metric">2 weeks ago</div>
+        <div class="metric-sub">52 days live</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- DRAFTS -->
+    <div class="prop-row" style="background: rgba(251, 250, 247, 0.6);">
+      <div class="prop-thumb empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">4-bedroom villa with garden</div>
+          <span class="warn-pill">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            DLD permit needed
+          </span>
+        </div>
+        <div class="prop-meta">
+          <span>Arabian Ranches 2 · 4 beds · 3,200 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 5.4M</span>
+          <span class="prop-meta-dot"></span>
+          <span>No photos uploaded</span>
+        </div>
+      </div>
+      <div><span class="status-pill draft">Draft</span></div>
+      <div><div class="metric dim">—</div></div>
+      <div><div class="metric dim">—</div></div>
+      <div>
+        <div class="metric">Yesterday</div>
+        <div class="metric-sub">Step 4 of 6</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="prop-row" style="background: rgba(251, 250, 247, 0.6);">
+      <div class="prop-thumb empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Untitled draft</div>
+        </div>
+        <div class="prop-meta">
+          <span>Step 1 of 6 · started 5 mins ago</span>
+        </div>
+      </div>
+      <div><span class="status-pill draft">Draft</span></div>
+      <div><div class="metric dim">—</div></div>
+      <div><div class="metric dim">—</div></div>
+      <div>
+        <div class="metric">5m ago</div>
+        <div class="metric-sub">Just started</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- PAUSED -->
+    <div class="prop-row">
+      <div class="prop-thumb t4"><div class="prop-thumb-count">7</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">2-bedroom apartment in Marina</div>
+        </div>
+        <div class="prop-meta">
+          <span>The Address Dubai Marina · 2 beds · 1,250 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 2.6M</span>
+          <span class="prop-meta-dot"></span>
+          <a class="prop-url"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>agentpages.io/sarah-bennett/marina-2br-address</a>
+        </div>
+      </div>
+      <div><span class="status-pill paused">Paused</span></div>
+      <div>
+        <div class="metric dim">214</div>
+        <div class="metric-sub">while live</div>
+      </div>
+      <div>
+        <div class="metric dim">4</div>
+        <div class="metric-sub">while live</div>
+      </div>
+      <div>
+        <div class="metric">3 weeks ago</div>
+        <div class="metric-sub">paused</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- SOLD -->
+    <div class="prop-row">
+      <div class="prop-thumb t3"><div class="prop-thumb-count">14</div></div>
+      <div class="prop-info">
+        <div class="prop-name-row">
+          <div class="prop-name">Atlantis-facing 4BR Palm villa</div>
+        </div>
+        <div class="prop-meta">
+          <span>Frond K · Palm Jumeirah · 4 beds · 5,800 sqft</span>
+          <span class="prop-meta-dot"></span>
+          <span class="prop-price">AED 19.5M</span>
+          <span class="prop-meta-dot"></span>
+          <span style="color: #6b4884; font-weight: 600;">Sold at AED 18.8M</span>
+        </div>
+      </div>
+      <div><span class="status-pill sold">Sold</span></div>
+      <div>
+        <div class="metric dim">1,847</div>
+        <div class="metric-sub">total</div>
+      </div>
+      <div>
+        <div class="metric dim">28</div>
+        <div class="metric-sub">total</div>
+      </div>
+      <div>
+        <div class="metric">5 weeks ago</div>
+        <div class="metric-sub">closed</div>
+      </div>
+      <div>
+        <button class="row-menu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.toolbar-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.toolbar-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+document.querySelectorAll('.view-toggle-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.view-toggle-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

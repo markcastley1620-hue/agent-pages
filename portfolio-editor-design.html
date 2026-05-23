@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Pages — Edit portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f1419; --ink-soft: #2c343d; --muted: #5a6470; --quiet: #8b95a0;
+  --line: #e6e8eb; --line-soft: #f0f2f4; --paper: #ffffff; --paper-warm: #fbfaf7;
+  --accent: #2d5a4f; --accent-hover: #234a40; --accent-soft: #e8f0ed; --accent-bright: #3d8a76;
+  --highlight: #f6f1e8; --highlight-line: #ebe3d2; --highlight-text: #8b6f3a;
+  --signal: #c2603a; --signal-soft: #fbeee7;
+  --share: #4a6fa5; --share-soft: #eaeff7;
+}
+
+html, body { font-family: 'Inter', sans-serif; background: var(--paper-warm); color: var(--ink); -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; line-height: 1.5; min-height: 100vh; }
+
+/* TOP BAR */
+.topbar { height: 60px; background: #fff; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: 0; z-index: 50; }
+.topbar-left { display: flex; align-items: center; gap: 20px; }
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+.topbar-name { font-size: 14.5px; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+.topbar-crumb { display: flex; align-items: center; gap: 8px; padding-left: 20px; border-left: 1px solid var(--line-soft); font-size: 13px; color: var(--muted); }
+.topbar-crumb a { color: var(--muted); text-decoration: none; }
+.topbar-crumb a:hover { color: var(--ink); }
+.topbar-crumb-sep { color: var(--quiet); }
+.topbar-crumb-current { color: var(--ink); font-weight: 500; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-save-state { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 11.5px; color: var(--quiet); font-weight: 500; }
+.topbar-save-state svg { width: 11px; height: 11px; stroke: var(--accent-bright); stroke-width: 2.4; fill: none; }
+.topbar-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; background: var(--accent-soft); color: var(--accent); }
+.topbar-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-bright); }
+.btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .12s; border: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn svg { width: 12px; height: 12px; stroke-width: 2; fill: none; stroke: currentColor; }
+.btn-outline { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.btn-outline:hover { border-color: var(--ink); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+
+/* SPLIT PAGE */
+.split { display: grid; grid-template-columns: 480px 1fr; min-height: calc(100vh - 60px); }
+
+/* ── EDITOR (left) ── */
+.editor { background: #fff; border-right: 1px solid var(--line-soft); overflow-y: auto; max-height: calc(100vh - 60px); }
+.editor-head { padding: 28px 28px 20px; border-bottom: 1px solid var(--line-soft); position: sticky; top: 0; background: #fff; z-index: 10; }
+.editor-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+.editor-title { font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 4px; }
+.editor-sub { font-size: 13px; color: var(--muted); }
+
+.editor-tabs { display: flex; gap: 2px; padding: 0 28px; border-bottom: 1px solid var(--line-soft); background: #fff; position: sticky; top: 105px; z-index: 9; }
+.editor-tab { padding: 12px 14px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .12s; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 6px; }
+.editor-tab:hover { color: var(--ink); }
+.editor-tab.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.editor-tab svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.editor-body { padding: 28px; }
+
+.editor-section { margin-bottom: 36px; }
+.editor-section-title { font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--quiet); font-weight: 600; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line-soft); }
+
+.field { margin-bottom: 16px; }
+.field-label { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.field-label .field-required { color: var(--signal); font-size: 10.5px; font-weight: 500; margin-left: 6px; }
+.field-label .field-optional { color: var(--quiet); font-size: 10.5px; font-weight: 400; margin-left: 6px; }
+.field-hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.field-hint strong { color: var(--ink); font-weight: 500; }
+.field-input, .field-textarea {
+  width: 100%; padding: 10px 12px; background: #fff;
+  border: 1px solid var(--line); border-radius: 8px;
+  font-size: 13.5px; color: var(--ink); font-family: inherit;
+  transition: all .12s; line-height: 1.5;
+}
+.field-input::placeholder, .field-textarea::placeholder { color: var(--quiet); }
+.field-input:focus, .field-textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45,90,79,0.08);
+}
+.field-textarea { resize: vertical; min-height: 90px; font-family: inherit; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-counter { font-size: 11px; color: var(--quiet); font-weight: 500; }
+
+/* Photo upload */
+.photo-up { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 12px; }
+.photo-up-preview { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-hover)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 600; flex-shrink: 0; }
+.photo-up-preview.has-image { background: linear-gradient(135deg, #d4c9b8 0%, #a89880 100%); }
+.photo-up-text { flex: 1; min-width: 0; }
+.photo-up-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.photo-up-hint { font-size: 11.5px; color: var(--muted); }
+.photo-up-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.photo-up-btn { padding: 6px 10px; background: #fff; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; font-weight: 500; color: var(--ink); cursor: pointer; font-family: inherit; }
+.photo-up-btn:hover { border-color: var(--ink); }
+.photo-up-btn.danger { color: var(--signal); }
+
+/* Cover photo (wide) */
+.cover-up { padding: 0; background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 12px; overflow: hidden; }
+.cover-up-image { height: 110px; background: linear-gradient(135deg, #2d3e54 0%, #1a2535 40%, #c9a872 100%); position: relative; }
+.cover-up-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.25) 100%); }
+.cover-up-actions { padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cover-up-meta { font-size: 11.5px; color: var(--muted); }
+.cover-up-btns { display: flex; gap: 6px; }
+
+/* Chips for languages/specialisms */
+.chip-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; min-height: 42px; align-items: flex-start; align-content: flex-start; }
+.chip-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,90,79,0.08); }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: var(--accent-soft); border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--accent); }
+.chip-remove { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.chip-remove svg { width: 8px; height: 8px; stroke: #fff; stroke-width: 2.5; fill: none; }
+.chip-input-text { flex: 1; min-width: 80px; border: none; outline: none; font-family: inherit; font-size: 13px; background: transparent; color: var(--ink); padding: 4px 2px; }
+.chip-input-text::placeholder { color: var(--quiet); }
+
+/* Toggle row */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 10px; margin-bottom: 10px; }
+.toggle-row-text { flex: 1; }
+.toggle-row-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.toggle-row-desc { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.toggle { width: 32px; height: 18px; background: var(--line); border-radius: 9px; position: relative; flex-shrink: 0; transition: background .15s; cursor: pointer; }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.toggle.on { background: var(--accent); }
+.toggle.on::after { transform: translateX(14px); }
+
+/* Theme picker */
+.theme-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.theme-card { padding: 10px; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; transition: all .12s; }
+.theme-card:hover { border-color: var(--quiet); }
+.theme-card.selected { border-color: var(--accent); }
+.theme-swatch { height: 56px; border-radius: 6px; margin-bottom: 8px; position: relative; overflow: hidden; }
+.theme-swatch.editorial { background: linear-gradient(180deg, #fbfaf7 0%, #f3eee3 100%); }
+.theme-swatch.editorial::after { content: ''; position: absolute; top: 12px; left: 10px; right: 10px; height: 8px; background: var(--ink); border-radius: 2px; }
+.theme-swatch.editorial::before { content: ''; position: absolute; top: 26px; left: 10px; width: 50%; height: 4px; background: var(--accent); border-radius: 2px; }
+.theme-swatch.modern { background: #fff; border: 1px solid var(--line-soft); }
+.theme-swatch.modern::after { content: ''; position: absolute; top: 8px; left: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--share); }
+.theme-swatch.modern::before { content: ''; position: absolute; top: 14px; left: 38px; right: 8px; height: 4px; background: var(--ink); border-radius: 2px; box-shadow: 0 8px 0 var(--line-soft); }
+.theme-swatch.warm { background: linear-gradient(135deg, #f6f1e8 0%, #ebe3d2 100%); }
+.theme-swatch.warm::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 10px; background: var(--highlight-text); border-radius: 2px; }
+.theme-swatch.warm::before { content: ''; position: absolute; bottom: 8px; left: 10px; width: 60%; height: 5px; background: rgba(139,111,58,0.4); border-radius: 2px; }
+.theme-name { font-size: 11.5px; font-weight: 600; color: var(--ink); text-align: center; }
+.theme-card.selected .theme-name { color: var(--accent); }
+
+/* Accent color swatches */
+.color-row { display: flex; gap: 8px; }
+.color-swatch { width: 36px; height: 36px; border-radius: 9px; cursor: pointer; border: 2px solid transparent; transition: all .12s; position: relative; }
+.color-swatch.selected { border-color: var(--ink); box-shadow: 0 0 0 2px #fff inset; }
+.color-swatch.emerald { background: #2d5a4f; }
+.color-swatch.navy { background: #1f3a68; }
+.color-swatch.burgundy { background: #6e2e3d; }
+.color-swatch.charcoal { background: #2c343d; }
+.color-swatch.terracotta { background: #a14b2c; }
+.color-swatch.olive { background: #5e6b3a; }
+
+/* Property selector */
+.prop-select-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all .12s; }
+.prop-select-row:hover { background: #f6f3ec; }
+.prop-select-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #fff; }
+.prop-select-row.selected .prop-select-check { background: var(--accent); border-color: var(--accent); }
+.prop-select-check svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; }
+.prop-select-row.selected .prop-select-check svg { opacity: 1; }
+.prop-select-thumb { width: 36px; height: 28px; border-radius: 5px; flex-shrink: 0; }
+.prop-select-info { flex: 1; min-width: 0; }
+.prop-select-name { font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 1px; line-height: 1.3; }
+.prop-select-meta { font-size: 10.5px; color: var(--muted); }
+
+/* ── PREVIEW (right) ── */
+.preview { padding: 32px; max-height: calc(100vh - 60px); overflow-y: auto; }
+.preview-head { display: flex; align-items: center; justify-content: space-between; max-width: 920px; margin: 0 auto 16px; gap: 16px; }
+.preview-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--quiet); font-weight: 600; }
+.preview-controls { display: flex; gap: 6px; }
+.preview-device { display: flex; padding: 2px; background: var(--line-soft); border-radius: 7px; }
+.preview-device-btn { padding: 5px 10px; background: transparent; border: none; cursor: pointer; border-radius: 5px; font-family: inherit; font-size: 11.5px; font-weight: 500; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
+.preview-device-btn svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2; fill: none; }
+.preview-device-btn.active { background: #fff; color: var(--ink); }
+.preview-url { font-size: 11.5px; color: var(--muted); font-family: 'Inter', monospace; padding: 5px 10px; background: #fff; border: 1px solid var(--line-soft); border-radius: 6px; }
+.preview-url strong { color: var(--ink); font-weight: 600; }
+
+.preview-frame { background: #fff; border: 1px solid var(--line-soft); border-radius: 12px; box-shadow: 0 6px 20px rgba(15,20,25,0.06); max-width: 920px; margin: 0 auto; overflow: hidden; }
+.preview-browser-bar { height: 30px; background: var(--paper-warm); border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; padding: 0 12px; gap: 6px; }
+.preview-dot { width: 8px; height: 8px; border-radius: 50%; }
+.preview-dot:nth-child(1) { background: #ff5f57; }
+.preview-dot:nth-child(2) { background: #ffbd2e; }
+.preview-dot:nth-child(3) { background: #28ca42; }
+.preview-browser-url { margin-left: 10px; padding: 3px 10px; background: #fff; border: 1px solid var(--line-soft); border-radius: 5px; font-size: 10.5px; color: var(--muted); font-family: 'Inter', monospace; }
+
+/* ─── ACTUAL PUBLIC PORTFOLIO PREVIEW ─── */
+.portfolio-prev { background: var(--paper-warm); }
+
+.pp-hero { padding: 56px 48px 48px; background: linear-gradient(135deg, var(--paper-warm) 0%, #f3eee3 100%); position: relative; overflow: hidden; }
+.pp-hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 360px; height: 360px; background: radial-gradient(circle, rgba(45,90,79,0.06), transparent 70%); pointer-events: none; }
+.pp-hero-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 48px; align-items: center; max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }
+.pp-hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 18px; }
+.pp-hero-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+.pp-hero-title { font-family: 'Fraunces', serif; font-size: 44px; font-weight: 400; color: var(--ink); letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 18px; }
+.pp-hero-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+.pp-hero-sub { font-size: 14.5px; color: var(--ink-soft); max-width: 460px; line-height: 1.7; margin-bottom: 24px; font-weight: 400; }
+.pp-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.pp-hero-btn-primary { padding: 11px 22px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
+.pp-hero-btn-secondary { padding: 11px 18px; background: transparent; color: var(--ink); border: 1px solid var(--ink); border-radius: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; font-family: inherit; }
+.pp-hero-portrait { width: 280px; height: 360px; background: linear-gradient(135deg, #d4c9b8 0%, #a89880 100%); border-radius: 4px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); margin: 0 auto; position: relative; }
+.pp-hero-portrait-frame { position: absolute; top: 16px; left: 16px; right: -16px; bottom: -16px; border: 1px solid var(--accent); border-radius: 4px; z-index: -1; }
+
+/* Stats bar */
+.pp-stats { background: #fff; padding: 28px 48px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+.pp-stats-grid { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.pp-stat { padding: 0 24px; border-right: 1px solid var(--line-soft); }
+.pp-stat:first-child { padding-left: 0; }
+.pp-stat:last-child { border-right: none; padding-right: 0; }
+.pp-stat-val { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; color: var(--accent); letter-spacing: -0.02em; line-height: 1; margin-bottom: 6px; }
+.pp-stat-val sup { font-size: 12px; vertical-align: top; }
+.pp-stat-lab { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+/* About */
+.pp-about { padding: 64px 48px; }
+.pp-about-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.2fr; gap: 64px; align-items: start; }
+.pp-about-eyebrow { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.pp-about-eyebrow::before { content: ''; width: 22px; height: 1px; background: var(--accent); }
+.pp-about-title { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 400; color: var(--ink); letter-spacing: -0.015em; line-height: 1.15; margin-bottom: 6px; }
+.pp-about-title em { font-style: italic; color: var(--accent); }
+.pp-about-meta { font-size: 12px; color: var(--muted); }
+.pp-about-body { font-size: 14px; color: var(--ink-soft); line-height: 1.85; font-weight: 400; }
+.pp-about-body p { margin-bottom: 16px; }
+.pp-about-body p:last-child { margin-bottom: 0; }
+
+.pp-about-tags { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line-soft); }
+.pp-tag-row { display: flex; align-items: baseline; gap: 14px; }
+.pp-tag-label { font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 600; min-width: 100px; flex-shrink: 0; }
+.pp-tag-vals { font-size: 12.5px; color: var(--ink); font-weight: 400; }
+.pp-tag-vals span:not(:last-child)::after { content: ' ·'; color: var(--accent); margin-left: 6px; margin-right: 2px; }
+
+/* Listings */
+.pp-listings { padding: 64px 48px; background: #fff; }
+.pp-listings-inner { max-width: 1080px; margin: 0 auto; }
+.pp-listings-head { text-align: center; margin-bottom: 40px; }
+.pp-listings-eyebrow { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 12px; }
+.pp-listings-title { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 400; color: var(--ink); letter-spacing: -0.015em; line-height: 1.15; }
+.pp-listings-title em { font-style: italic; color: var(--accent); }
+
+.pp-listings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.pp-listing { background: var(--paper-warm); border: 1px solid var(--line-soft); border-radius: 4px; overflow: hidden; cursor: pointer; transition: all .25s; }
+.pp-listing:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(0,0,0,0.07); }
+.pp-listing-photo { aspect-ratio: 4/3; position: relative; }
+.pp-listing-photo.l1 { background: linear-gradient(135deg, #2d3e54 0%, #1a2535 40%, #c9a872 100%); }
+.pp-listing-photo.l2 { background: linear-gradient(135deg, #4a5d6b 0%, #2c3a47 100%); }
+.pp-listing-photo.l3 { background: linear-gradient(135deg, #c4ad8a 0%, #8b7456 100%); }
+.pp-listing-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.3) 100%); }
+.pp-listing-badge { position: absolute; top: 12px; left: 12px; padding: 3px 8px; background: var(--accent); border-radius: 3px; font-size: 9.5px; font-weight: 600; color: #fff; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
+.pp-listing-price-overlay { position: absolute; bottom: 12px; left: 14px; right: 14px; color: #fff; z-index: 2; }
+.pp-listing-price { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; letter-spacing: -0.015em; }
+.pp-listing-body { padding: 16px 18px 18px; }
+.pp-listing-name { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; margin-bottom: 4px; line-height: 1.3; }
+.pp-listing-loc { font-size: 10px; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; margin-bottom: 10px; }
+.pp-listing-specs { display: flex; gap: 12px; font-size: 11px; color: var(--muted); padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.pp-listing-specs strong { color: var(--ink); font-weight: 600; }
+
+/* Contact */
+.pp-contact { padding: 64px 48px; background: var(--paper-warm); }
+.pp-contact-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.pp-contact-eyebrow { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.pp-contact-eyebrow::before { content: ''; width: 22px; height: 1px; background: var(--accent); }
+.pp-contact-title { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 400; color: var(--ink); letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 14px; }
+.pp-contact-title em { font-style: italic; color: var(--accent); }
+.pp-contact-desc { font-size: 13.5px; color: var(--ink-soft); line-height: 1.7; font-weight: 400; }
+.pp-form { background: #fff; border: 1px solid var(--line-soft); border-radius: 4px; padding: 24px; }
+.pp-form-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+.pp-form-sub { font-size: 11.5px; color: var(--muted); margin-bottom: 16px; }
+.pp-form input, .pp-form textarea, .pp-form select { width: 100%; padding: 10px 12px; background: var(--paper-warm); border: 1px solid var(--line); border-radius: 4px; font-size: 12px; color: var(--ink); font-family: inherit; margin-bottom: 8px; }
+.pp-form-submit { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: inherit; margin-top: 4px; }
+
+/* Footer */
+.pp-footer { background: #fff; padding: 24px 48px; border-top: 1px solid var(--line-soft); font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.pp-footer-powered { font-style: italic; }
+.pp-footer-powered strong { color: var(--accent); font-style: normal; font-weight: 600; }
+
+@media (max-width: 1100px) {
+  .split { grid-template-columns: 1fr; }
+  .editor { max-height: none; border-right: none; border-bottom: 1px solid var(--line-soft); }
+  .preview { max-height: none; }
+  .preview-frame { max-width: 100%; }
+  .pp-hero-grid, .pp-about-inner, .pp-contact-inner { grid-template-columns: 1fr; gap: 32px; }
+  .pp-listings-grid { grid-template-columns: 1fr 1fr; }
+  .pp-stats-grid { grid-template-columns: 1fr 1fr; gap: 24px 0; }
+}
+@media (max-width: 700px) {
+  .topbar { padding: 0 16px; }
+  .topbar-crumb { display: none; }
+  .topbar-save-state { display: none; }
+  .pp-hero { padding: 40px 24px; }
+  .pp-hero-title { font-size: 30px; }
+  .pp-stats, .pp-about, .pp-listings, .pp-contact { padding: 40px 24px; }
+  .pp-stat { padding: 0 12px; }
+  .pp-listings-grid { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <div class="topbar-logo">a</div>
+      <div class="topbar-name">Agent Pages</div>
+    </div>
+    <div class="topbar-crumb">
+      <a href="#">Portfolio</a>
+      <span class="topbar-crumb-sep">/</span>
+      <span class="topbar-crumb-current">Edit</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-status">Live</div>
+    <div class="topbar-save-state">
+      <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+      <span>Saved 4s ago</span>
+    </div>
+    <button class="btn btn-outline">View live</button>
+    <button class="btn btn-primary">Publish changes</button>
+  </div>
+</div>
+
+<!-- SPLIT -->
+<div class="split">
+
+  <!-- ── EDITOR (left) ── -->
+  <div class="editor">
+    <div class="editor-head">
+      <div class="editor-eyebrow">Portfolio editor</div>
+      <h1 class="editor-title">Your portfolio page</h1>
+      <p class="editor-sub">Lives at agentpages.io/<strong style="color: var(--ink); font-weight: 600;">sarah-bennett</strong></p>
+    </div>
+
+    <div class="editor-tabs">
+      <div class="editor-tab active">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/></svg>
+        About you
+      </div>
+      <div class="editor-tab">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/><path d="M9 21v-8h6v8"/></svg>
+        Properties
+      </div>
+      <div class="editor-tab">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33"/></svg>
+        Theme
+      </div>
+      <div class="editor-tab">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+        SEO
+      </div>
+    </div>
+
+    <div class="editor-body">
+
+      <!-- ABOUT SECTION -->
+      <div class="editor-section">
+        <div class="editor-section-title">Identity</div>
+
+        <div class="field">
+          <div class="field-label">Profile photo<span class="field-required">required</span></div>
+          <div class="photo-up">
+            <div class="photo-up-preview">SB</div>
+            <div class="photo-up-text">
+              <div class="photo-up-title">No photo uploaded</div>
+              <div class="photo-up-hint">JPG or PNG · square works best · min 400×400</div>
+            </div>
+            <div class="photo-up-actions">
+              <button class="photo-up-btn">Upload</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Cover photo<span class="field-optional">optional</span></div>
+          <div class="cover-up">
+            <div class="cover-up-image"></div>
+            <div class="cover-up-actions">
+              <div class="cover-up-meta">dubai-skyline-dusk.jpg · 2.4 MB</div>
+              <div class="cover-up-btns">
+                <button class="photo-up-btn">Replace</button>
+                <button class="photo-up-btn danger">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">First name<span class="field-required">required</span></div>
+            <input class="field-input" value="Sarah" />
+          </div>
+          <div class="field">
+            <div class="field-label">Last name<span class="field-required">required</span></div>
+            <input class="field-input" value="Bennett" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Tagline<span class="field-optional">recommended</span></div>
+          <input class="field-input" value="Properties presented properly. Buyers handled personally." />
+          <div class="field-hint">Sits under your name on the hero. Keep it punchy.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">RERA number<span class="field-required">required</span></div>
+          <input class="field-input" value="12847" />
+          <div class="field-hint">Required for compliance — shown discreetly in the footer.</div>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-section-title">About you</div>
+
+        <div class="field">
+          <div class="field-label">
+            Bio
+            <span class="field-counter">412 / 600</span>
+          </div>
+          <textarea class="field-textarea" rows="6">I came to Dubai in 2011, when the market was still finding its feet. Over the last decade I've represented buyers and sellers across Downtown Dubai, the Palm, Emirates Hills, and Dubai Hills Estate. My clients tend to be investors, end-users relocating from London or Singapore, and Dubai-based families upsizing into their long-term homes. Most are introduced through people I've already worked with.</textarea>
+          <div class="field-hint">3 short paragraphs work best. Buyers read this in under 30 seconds.</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Years in Dubai</div>
+            <input class="field-input" value="15" />
+          </div>
+          <div class="field">
+            <div class="field-label">Deals closed</div>
+            <input class="field-input" value="127+" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Total volume<span class="field-optional">optional</span></div>
+          <input class="field-input" value="AED 2.4B" />
+          <div class="field-hint">Shown as a stat in your hero strip. Leave blank to hide.</div>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-section-title">Specialisms &amp; languages</div>
+
+        <div class="field">
+          <div class="field-label">Specialisms</div>
+          <div class="chip-input">
+            <span class="chip">Downtown Dubai<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <span class="chip">Palm Jumeirah<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <span class="chip">Emirates Hills<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <span class="chip">Dubai Hills<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <input class="chip-input-text" placeholder="Add another..." />
+          </div>
+          <div class="field-hint">Communities or specialities. Helps with Google + AI ranking.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Languages</div>
+          <div class="chip-input">
+            <span class="chip">English<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <span class="chip">Arabic<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <span class="chip">French<span class="chip-remove"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span></span>
+            <input class="chip-input-text" placeholder="Add another..." />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Price range from</div>
+            <input class="field-input" value="AED 3M" />
+          </div>
+          <div class="field">
+            <div class="field-label">Price range to</div>
+            <input class="field-input" value="AED 80M" />
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-section-title">Contact &amp; lead capture</div>
+
+        <div class="field">
+          <div class="field-label">Phone (WhatsApp)<span class="field-required">required</span></div>
+          <input class="field-input" value="+971 50 123 4567" />
+        </div>
+
+        <div class="field">
+          <div class="field-label">Email<span class="field-required">required</span></div>
+          <input class="field-input" value="sarah@bennett.ae" />
+        </div>
+
+        <div class="field">
+          <div class="field-label">Available hours<span class="field-optional">optional</span></div>
+          <input class="field-input" value="Daily, 9am – 8pm GST" />
+          <div class="field-hint">Shown next to your phone number on the contact section.</div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-title">Show enquiry form</div>
+            <div class="toggle-row-desc">Lets buyers send you a detailed enquiry from your portfolio page.</div>
+          </div>
+          <div class="toggle on"></div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-title">Show WhatsApp button</div>
+            <div class="toggle-row-desc">One-tap WhatsApp from the contact section.</div>
+          </div>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-section-title">Featured properties</div>
+
+        <div class="field">
+          <div class="field-label">Which properties to feature?</div>
+          <div class="field-hint" style="margin-top: 0; margin-bottom: 12px;">Currently showing <strong>6 live properties</strong>. Drag to reorder. Untick to hide from your portfolio (still live publicly under its own URL).</div>
+
+          <div class="prop-select-row selected">
+            <div class="prop-select-check"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="prop-select-thumb" style="background: linear-gradient(135deg, #2d3e54, #c9a872);"></div>
+            <div class="prop-select-info">
+              <div class="prop-select-name">4-bedroom villa with private pool</div>
+              <div class="prop-select-meta">The Meadows 7 · AED 8.5M</div>
+            </div>
+          </div>
+          <div class="prop-select-row selected">
+            <div class="prop-select-check"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="prop-select-thumb" style="background: linear-gradient(135deg, #4a5d6b, #2c3a47);"></div>
+            <div class="prop-select-info">
+              <div class="prop-select-name">High-floor 2BR with Burj Khalifa view</div>
+              <div class="prop-select-meta">Burj Vista · AED 3.2M</div>
+            </div>
+          </div>
+          <div class="prop-select-row selected">
+            <div class="prop-select-check"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="prop-select-thumb" style="background: linear-gradient(135deg, #c4ad8a, #8b7456);"></div>
+            <div class="prop-select-info">
+              <div class="prop-select-name">Beachfront villa with private access</div>
+              <div class="prop-select-meta">Palm Frond M · AED 24M</div>
+            </div>
+          </div>
+          <div class="prop-select-row">
+            <div class="prop-select-check"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="prop-select-thumb" style="background: linear-gradient(135deg, #5a7d8b, #34505f);"></div>
+            <div class="prop-select-info">
+              <div class="prop-select-name">Custom 6-bedroom estate on the golf course</div>
+              <div class="prop-select-meta">Emirates Hills · POR</div>
+            </div>
+          </div>
+          <div class="prop-select-row">
+            <div class="prop-select-check"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="prop-select-thumb" style="background: linear-gradient(135deg, #d4c9b8, #a89880);"></div>
+            <div class="prop-select-info">
+              <div class="prop-select-name">Park-facing 5-bedroom townhouse</div>
+              <div class="prop-select-meta">Dubai Hills · AED 6.8M</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-section-title">Theme</div>
+
+        <div class="field">
+          <div class="field-label">Layout style</div>
+          <div class="theme-grid">
+            <div class="theme-card selected">
+              <div class="theme-swatch editorial"></div>
+              <div class="theme-name">Editorial</div>
+            </div>
+            <div class="theme-card">
+              <div class="theme-swatch modern"></div>
+              <div class="theme-name">Modern</div>
+            </div>
+            <div class="theme-card">
+              <div class="theme-swatch warm"></div>
+              <div class="theme-name">Warm</div>
+            </div>
+          </div>
+          <div class="field-hint" style="margin-top: 10px;">Editorial uses serif headlines (currently selected). Modern uses sans throughout. Warm uses a cream palette.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Accent colour</div>
+          <div class="color-row">
+            <div class="color-swatch emerald selected" title="Emerald"></div>
+            <div class="color-swatch navy" title="Navy"></div>
+            <div class="color-swatch burgundy" title="Burgundy"></div>
+            <div class="color-swatch charcoal" title="Charcoal"></div>
+            <div class="color-swatch terracotta" title="Terracotta"></div>
+            <div class="color-swatch olive" title="Olive"></div>
+          </div>
+          <div class="field-hint" style="margin-top: 10px;">Sets the accent colour across your portfolio — headlines, buttons, tags.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PREVIEW (right) ── -->
+  <div class="preview">
+
+    <div class="preview-head">
+      <div class="preview-label">Live preview</div>
+      <div class="preview-controls">
+        <div class="preview-url">agentpages.io/<strong>sarah-bennett</strong></div>
+        <div class="preview-device">
+          <button class="preview-device-btn active">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Desktop
+          </button>
+          <button class="preview-device-btn">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>
+            Mobile
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-frame">
+      <div class="preview-browser-bar">
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-browser-url">agentpages.io/sarah-bennett</div>
+      </div>
+
+      <!-- THE ACTUAL PORTFOLIO PREVIEW -->
+      <div class="portfolio-prev">
+
+        <!-- HERO -->
+        <section class="pp-hero">
+          <div class="pp-hero-grid">
+            <div>
+              <div class="pp-hero-eyebrow">Downtown · Palm · Emirates Hills · Dubai Hills</div>
+              <h1 class="pp-hero-title">Properties presented <em>properly.</em><br>Buyers handled personally.</h1>
+              <p class="pp-hero-sub">Fifteen years building Dubai real estate practice. From Burj Khalifa skyline residences to Palm Jumeirah waterfront villas, every property presented with the depth and discretion serious buyers expect.</p>
+              <div class="pp-hero-actions">
+                <button class="pp-hero-btn-primary">View properties</button>
+                <button class="pp-hero-btn-secondary">Schedule a call</button>
+              </div>
+            </div>
+            <div>
+              <div class="pp-hero-portrait">
+                <div class="pp-hero-portrait-frame"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STATS -->
+        <section class="pp-stats">
+          <div class="pp-stats-grid">
+            <div class="pp-stat">
+              <div class="pp-stat-val">127<sup>+</sup></div>
+              <div class="pp-stat-lab">Transactions closed</div>
+            </div>
+            <div class="pp-stat">
+              <div class="pp-stat-val">2.4<sup>B</sup></div>
+              <div class="pp-stat-lab">AED in sales volume</div>
+            </div>
+            <div class="pp-stat">
+              <div class="pp-stat-val">15<sup>yrs</sup></div>
+              <div class="pp-stat-lab">In Dubai real estate</div>
+            </div>
+            <div class="pp-stat">
+              <div class="pp-stat-val">4.9<sup>★</sup></div>
+              <div class="pp-stat-lab">Average client rating</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ABOUT -->
+        <section class="pp-about">
+          <div class="pp-about-inner">
+            <div>
+              <div class="pp-about-eyebrow">About</div>
+              <h2 class="pp-about-title">A practice built on <em>discretion</em> and the right buyer for the right home.</h2>
+              <div class="pp-about-meta">Founder · RERA #12847</div>
+
+              <div class="pp-about-tags">
+                <div class="pp-tag-row">
+                  <div class="pp-tag-label">Specialisms</div>
+                  <div class="pp-tag-vals"><span>Downtown</span><span>Palm Jumeirah</span><span>Emirates Hills</span><span>Dubai Hills</span></div>
+                </div>
+                <div class="pp-tag-row">
+                  <div class="pp-tag-label">Languages</div>
+                  <div class="pp-tag-vals"><span>English</span><span>Arabic</span><span>French</span></div>
+                </div>
+                <div class="pp-tag-row">
+                  <div class="pp-tag-label">Price range</div>
+                  <div class="pp-tag-vals"><span>AED 3M – 80M</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pp-about-body">
+              <p>I came to Dubai in 2011, when the market was still finding its feet. Over the last decade I've represented buyers and sellers across Downtown Dubai, the Palm, Emirates Hills, and Dubai Hills Estate.</p>
+              <p>My clients tend to be investors, end-users relocating from London or Singapore, and Dubai-based families upsizing into their long-term homes. Most are introduced through people I've already worked with — which I take as the highest form of compliment.</p>
+              <p>I work with a small number of clients at any given time. That's deliberate. It's how I'm able to know every building, every floor plan, every transfer history.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- LISTINGS -->
+        <section class="pp-listings">
+          <div class="pp-listings-inner">
+            <div class="pp-listings-head">
+              <div class="pp-listings-eyebrow">Current portfolio</div>
+              <h2 class="pp-listings-title">Properties <em>currently represented</em></h2>
+            </div>
+            <div class="pp-listings-grid">
+
+              <div class="pp-listing">
+                <div class="pp-listing-photo l1">
+                  <div class="pp-listing-badge">New</div>
+                  <div class="pp-listing-price-overlay">
+                    <div class="pp-listing-price">AED 8,500,000</div>
+                  </div>
+                </div>
+                <div class="pp-listing-body">
+                  <div class="pp-listing-name">4-bedroom villa with private pool</div>
+                  <div class="pp-listing-loc">The Meadows 7</div>
+                  <div class="pp-listing-specs">
+                    <span><strong>4</strong> beds</span>
+                    <span><strong>5</strong> baths</span>
+                    <span><strong>3,850</strong> sqft</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pp-listing">
+                <div class="pp-listing-photo l2">
+                  <div class="pp-listing-badge">Featured</div>
+                  <div class="pp-listing-price-overlay">
+                    <div class="pp-listing-price">AED 3,200,000</div>
+                  </div>
+                </div>
+                <div class="pp-listing-body">
+                  <div class="pp-listing-name">High-floor 2BR · Burj Khalifa view</div>
+                  <div class="pp-listing-loc">Burj Vista · Downtown</div>
+                  <div class="pp-listing-specs">
+                    <span><strong>2</strong> beds</span>
+                    <span><strong>2</strong> baths</span>
+                    <span><strong>1,420</strong> sqft</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pp-listing">
+                <div class="pp-listing-photo l3">
+                  <div class="pp-listing-badge">New</div>
+                  <div class="pp-listing-price-overlay">
+                    <div class="pp-listing-price">AED 24,000,000</div>
+                  </div>
+                </div>
+                <div class="pp-listing-body">
+                  <div class="pp-listing-name">Beachfront villa with private access</div>
+                  <div class="pp-listing-loc">Frond M · Palm Jumeirah</div>
+                  <div class="pp-listing-specs">
+                    <span><strong>5</strong> beds</span>
+                    <span><strong>6</strong> baths</span>
+                    <span><strong>7,200</strong> sqft</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- CONTACT -->
+        <section class="pp-contact">
+          <div class="pp-contact-inner">
+            <div>
+              <div class="pp-contact-eyebrow">Get in touch</div>
+              <h2 class="pp-contact-title">Looking for something <em>specific?</em></h2>
+              <p class="pp-contact-desc">Tell me what you're looking for and I'll come back to you personally. Whether you have a clear brief or are still narrowing it down, I'll handle your enquiry with the discretion it deserves.</p>
+            </div>
+            <div class="pp-form">
+              <div class="pp-form-title">Send me a note</div>
+              <div class="pp-form-sub">I respond personally within one business day.</div>
+              <input type="text" placeholder="Full name" />
+              <input type="email" placeholder="Email" />
+              <input type="tel" placeholder="Phone" />
+              <textarea rows="3" placeholder="What you're looking for..." style="resize: vertical;"></textarea>
+              <button class="pp-form-submit">Send enquiry</button>
+            </div>
+          </div>
+        </section>
+
+        <footer class="pp-footer">
+          <div>© 2026 Sarah Bennett · RERA #12847</div>
+          <div class="pp-footer-powered">Powered by <strong>Agent Pages</strong></div>
+        </footer>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Editor tabs
+document.querySelectorAll('.editor-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.editor-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+
+// Toggles
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('on'));
+});
+
+// Theme cards
+document.querySelectorAll('.theme-card').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.theme-card').forEach(x => x.classList.remove('selected'));
+    c.classList.add('selected');
+  });
+});
+
+// Color swatches
+document.querySelectorAll('.color-swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+    s.classList.add('selected');
+  });
+});
+
+// Property selectors
+document.querySelectorAll('.prop-select-row').forEach(r => {
+  r.addEventListener('click', () => r.classList.toggle('selected'));
+});
+
+// Device toggle
+document.querySelectorAll('.preview-device-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.preview-device-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
