@@ -377,18 +377,16 @@ export default function AISearchVisibility({ mode, visibilityConfig, onConfigCha
                 <div style={{ fontSize: 11, color: 'var(--muted,#5a6470)', fontFamily: 'monospace' }}>{engine.botId}</div>
               </div>
 
-              {/* Status / will-submit */}
-              <div style={{ flexShrink: 0, minWidth: 80, textAlign: 'right' as const }}>
+              {/* Status pill (post-publish only) or mechanism text (pre-publish) */}
+              <div style={{ flexShrink: 0, fontSize: 11, color: 'var(--muted,#5a6470)', lineHeight: 1.4, textAlign: 'right' as const }}>
                 {mode === 'pre-publish' ? (
-                  <WillSubmitPill />
+                  <span>{engine.mechanism}</span>
                 ) : (
-                  <StatusPill type={engine.statusType} label={engine.postStatus} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                    <StatusPill type={engine.statusType} label={engine.postStatus} />
+                    <span style={{ fontSize: 10.5 }}>{engine.postTiming}</span>
+                  </div>
                 )}
-              </div>
-
-              {/* Mechanism / timing */}
-              <div style={{ fontSize: 11, color: 'var(--muted,#5a6470)', minWidth: 160, maxWidth: 200, lineHeight: 1.4, display: 'none' }} className="aisv-mechanism">
-                {mode === 'pre-publish' ? engine.mechanism : engine.postTiming}
               </div>
 
               {/* Toggle (pre-publish only per row) */}
