@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, Plus, ChevronRight, Eye, Calendar,
-  Percent, Zap, Globe, CheckCircle,
-  ArrowUpRight, Activity
+  Percent, Globe,
+  ArrowUpRight, Star, Link as LinkIcon, Bell
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -14,9 +14,7 @@ interface MockLead { type: 'lead' | 'view' | 'book' | 'publish'; title: string; 
 
 /* ── mock data ──────────────────────────────────────────────────────────── */
 const MOCK_ACTIVITY: MockLead[] = []
-
 const MOCK_TOP: { name: string; leads: number; views: number; color: string }[] = []
-
 const MOCK_ATTENTION: { color: string; title: string; desc: string }[] = []
 
 /* chart points for 7-day view (views + leads) */
@@ -58,113 +56,257 @@ function ActivityIcon({ type }: { type: MockLead['type'] }) {
   )
 }
 
+/* ── helper: derive first name from profile + user email ─────────────────── */
+function resolveFirstName(profile: Profile | null, userEmail?: string): string {
+  if (profile?.first_name && profile.first_name.trim()) {
+    return profile.first_name.trim()
+  }
+  const email = profile?.email || userEmail || ''
+  if (email.includes('@')) {
+    const part = email.split('@')[0]
+    return part.charAt(0).toUpperCase() + part.slice(1)
+  }
+  return 'Friend'
+}
+
 
 /* ══════════════════════════════════════════════════════════════════════════
    EMPTY STATE
 ═══════════════════════════════════════════════════════════════════════════ */
 function EmptyState({ firstName }: { firstName: string }) {
   const steps = [
-    { label: 'Create your account', done: true,  to: null },
-    { label: 'Set up your agent profile', done: false, to: '/onboarding' },
-    { label: 'Add your first property', done: false, to: '/properties/new' },
-    { label: 'Connect WhatsApp', done: false, to: '/settings' },
+    { label: 'Create your account',      desc: 'You\'re in — account created.',           done: true,  to: null },
+    { label: 'Set up your agent profile', desc: 'Add your photo, bio, and contact info.',  done: false, to: '/onboarding' },
+    { label: 'Add your first property',   desc: 'List a property and get a shareable page.', done: false, to: '/properties/new' },
+    { label: 'Connect WhatsApp',          desc: 'Get lead alerts straight to your phone.',  done: false, to: '/settings' },
   ]
   const done = steps.filter(s => s.done).length
-  const pct = (done / steps.length) * 100
+  const pct  = (done / steps.length) * 100
+  // first incomplete index
+  const nextIdx = steps.findIndex(s => !s.done)
 
   return (
-    <div style={{ padding: '40px 32px', maxWidth: 860, margin: '0 auto' }}>
-      {/* Greeting */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.5px', marginBottom: 4 }}>
-          Welcome, <span style={{ color: '#2ab695' }}>{firstName}.</span>
+    <div style={{ padding: '32px 32px 48px', maxWidth: 920, margin: '0 auto' }}>
+
+      {/* ── 1. Greeting ─────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0f1419', letterSpacing: '-0.5px', marginBottom: 4 }}>
+          Welcome,{' '}
+          <span style={{ color: '#2d5a4f' }}>{firstName}.</span>
         </h1>
-        <p style={{ fontSize: 14, color: '#888' }}>Let's get your first property page live.</p>
+        <p style={{ fontSize: 14, color: '#6b7280' }}>Let's get your first property page live.</p>
       </div>
 
-      {/* Hero card */}
+      {/* ── 2 + 3 + 4. Hero card ────────────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 60%, #fde68a 100%)',
-        border: '1px solid #fde68a', borderRadius: 16,
-        padding: '28px 32px', marginBottom: 20,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24
-      }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Get started</div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.3px', marginBottom: 16, lineHeight: 1.3 }}>
+        background: 'linear-gradient(135deg, #fbfaf7 0%, #f3eee3 100%)',
+        border: '1px solid #ebe3d2',
+        borderRadius: 16,
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '28px 32px',
+        marginBottom: 24,
+        display: 'grid',
+        gridTemplateColumns: '1fr 320px',
+        gap: 32,
+        alignItems: 'center',
+      }} className="hero-grid">
+
+        {/* Soft emerald glow top-right */}
+        <div style={{
+          position: 'absolute', top: -80, right: -80,
+          width: 280, height: 280,
+          background: 'radial-gradient(circle, rgba(45,90,79,0.08), transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Left content */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#2d5a4f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Get started</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1419', letterSpacing: '-0.3px', marginBottom: 20, lineHeight: 1.35 }}>
             Your first page goes live<br />in under 5 minutes.
           </h2>
-          <Link to="/properties/new" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#1a1a1a', color: '#fff',
-            padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            textDecoration: 'none', transition: 'opacity 0.15s'
-          }}>
+          <Link
+            to="/properties/new"
+            className="emerald-btn"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#2d5a4f', color: '#fff',
+              padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              textDecoration: 'none',
+              boxShadow: '0 2px 6px rgba(45,90,79,0.2)',
+              transition: 'background 0.15s, box-shadow 0.15s, transform 0.15s',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLAnchorElement
+              el.style.background = '#234a40'
+              el.style.boxShadow  = '0 8px 22px rgba(45,90,79,0.3)'
+              el.style.transform  = 'translateY(-1px)'
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLAnchorElement
+              el.style.background = '#2d5a4f'
+              el.style.boxShadow  = '0 2px 6px rgba(45,90,79,0.2)'
+              el.style.transform  = 'translateY(0)'
+            }}
+          >
             <Plus size={14} />
             Add your first property
           </Link>
         </div>
-        {/* Mini preview — hidden on mobile via class */}
+
+        {/* ── 4. Right-side mini preview card ─────────────────────────── */}
         <div className="hero-preview" style={{
-          width: 180, flexShrink: 0,
-          background: '#fff', borderRadius: 12, padding: '14px',
-          border: '1px solid #e5e7eb', boxShadow: '0 4px 16px rgba(0,0,0,0.06)'
+          background: '#fff',
+          border: '1px solid #f0f2f4',
+          borderRadius: 14,
+          padding: 16,
+          boxShadow: '0 14px 36px rgba(15,20,25,0.06)',
+          position: 'relative', zIndex: 1,
         }}>
-          <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg, #2ab695, #1d9478)', borderRadius: 8, marginBottom: 10 }} />
-          <div style={{ height: 8, background: '#f0f0f0', borderRadius: 4, marginBottom: 6 }} />
-          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 4, width: '70%', marginBottom: 12 }} />
-          <div style={{ height: 80, background: 'linear-gradient(135deg, #e0f2fe, #bfdbfe)', borderRadius: 8, marginBottom: 10 }} />
-          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 4, marginBottom: 4 }} />
-          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 4, width: '60%' }} />
+          {/* Header row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #2d5a4f, #3d8a76)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 700, color: '#fff',
+            }}>SB</div>
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#0f1419', lineHeight: 1.2 }}>Sarah Bennett</div>
+              <div style={{ fontSize: 10, color: '#8b95a0' }}>Bennett &amp; Partners</div>
+            </div>
+          </div>
+          {/* Hero image */}
+          <div style={{
+            height: 90,
+            background: 'linear-gradient(135deg, #2d3e54 0%, #1a2535 40%, #c9a872 100%)',
+            borderRadius: 8, marginBottom: 10,
+          }} />
+          {/* Title */}
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0f1419', marginBottom: 4 }}>Your property here</div>
+          {/* Meta */}
+          <div style={{ fontSize: 11, color: '#8b95a0', marginBottom: 8 }}>Photos · AI description · sold pricing</div>
+          {/* Price */}
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0f1419' }}>AED 2,850,000</div>
         </div>
       </div>
 
-      {/* Checklist */}
-      <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 16, padding: '24px 28px', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Getting started</h3>
-          <span style={{ fontSize: 12, color: '#888' }}>{done}/{steps.length} completed</span>
+      {/* ── 5. Checklist ────────────────────────────────────────────────── */}
+      <div style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 14, marginBottom: 24 }}>
+        {/* Card header */}
+        <div style={{ padding: '20px 24px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0f1419' }}>Get set up</div>
+              <div style={{ fontSize: 12, color: '#8b95a0', marginTop: 2 }}>A quick walk-through to get you ready to close deals.</div>
+            </div>
+            <span style={{ fontSize: 12, color: '#8b95a0', marginTop: 2, flexShrink: 0 }}>{done} of {steps.length}</span>
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: 4, background: '#f0f2f4', borderRadius: 99, margin: '14px 0 0', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: '#3d8a76', borderRadius: 99, transition: 'width 0.4s' }} />
+          </div>
         </div>
-        <div style={{ height: 4, background: '#f0f0f0', borderRadius: 99, marginBottom: 20, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: '#2ab695', borderRadius: 99, transition: 'width 0.4s' }} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {steps.map((step, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{
-                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: step.done ? '#2ab695' : '#f0f0f0',
-                border: `2px solid ${step.done ? '#2ab695' : '#e5e7eb'}`
-              }}>
-                {step.done && <CheckCircle size={12} color="#fff" />}
+
+        {/* Rows */}
+        <div>
+          {steps.map((step, i) => {
+            const isNext = !step.done && i === nextIdx
+            return (
+              <div
+                key={i}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '14px 24px',
+                  borderBottom: i < steps.length - 1 ? '1px solid #f0f2f4' : 'none',
+                }}
+              >
+                {/* Circle */}
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: step.done ? '#3d8a76' : '#fff',
+                  border: step.done ? 'none' : '1.5px solid #e6e8eb',
+                }}>
+                  {step.done && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 600,
+                    color: step.done ? '#8b95a0' : '#0f1419',
+                    textDecoration: step.done ? 'line-through' : 'none',
+                    lineHeight: 1.3,
+                  }}>{step.label}</div>
+                  <div style={{ fontSize: 12, color: '#8b95a0', marginTop: 1 }}>{step.desc}</div>
+                </div>
+
+                {/* Action button */}
+                {!step.done && step.to && (
+                  isNext ? (
+                    <Link
+                      to={step.to}
+                      style={{
+                        flexShrink: 0,
+                        background: '#2d5a4f', color: '#fff',
+                        padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 6px rgba(45,90,79,0.2)',
+                      }}
+                    >Start</Link>
+                  ) : (
+                    <Link
+                      to={step.to}
+                      style={{
+                        flexShrink: 0,
+                        background: '#fff', color: '#0f1419',
+                        border: '1px solid #e6e8eb',
+                        padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 500,
+                        textDecoration: 'none',
+                      }}
+                    >Start</Link>
+                  )
+                )}
               </div>
-              <span style={{ fontSize: 13, color: step.done ? '#aaa' : '#1a1a1a', textDecoration: step.done ? 'line-through' : 'none', flex: 1 }}>
-                {step.label}
-              </span>
-              {!step.done && step.to && (
-                <Link to={step.to} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#2ab695', textDecoration: 'none', fontWeight: 500 }}>
-                  Start <ChevronRight size={12} />
-                </Link>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
-      {/* Feature cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} className="feature-grid">
+      {/* ── 6. Three encouraging stat cards ─────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} className="stat-grid">
         {[
-          { icon: Zap,      color: '#8b5cf6', bg: '#ede9fe', title: 'AI descriptions',     desc: 'Generate compelling property copy in seconds.' },
-          { icon: Globe,    color: '#2ab695', bg: '#d1fae5', title: 'Memorable URLs',       desc: 'Share clean links like agentpages.io/p/you/apt.' },
-          { icon: Activity, color: '#f97316', bg: '#ffedd5', title: 'Leads 3 ways',         desc: 'WhatsApp, form, and call — all in one place.' },
-        ].map(({ icon: Icon, color, bg, title, desc }, i) => (
-          <div key={i} style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 14, padding: '20px 20px' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Icon size={17} color={color} />
+          {
+            Icon: Star,
+            title: 'AI does the writing',
+            desc: 'Unique, SEO-tuned descriptions generated from your property details. Three tone options.',
+          },
+          {
+            Icon: LinkIcon,
+            title: 'URLs that get shared',
+            desc: 'Memorable links like 4bedroomvillainmeadows.com on Pro+ — printable, callable, shareable.',
+          },
+          {
+            Icon: Bell,
+            title: 'Leads, three ways',
+            desc: 'WhatsApp + email + dashboard inbox. The moment a buyer enquires, you know.',
+          },
+        ].map(({ Icon, title, desc }, i) => (
+          <div key={i} style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 12, padding: '18px 20px' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, background: '#e8f0ed',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+            }}>
+              <Icon size={15} color="#2d5a4f" />
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>{title}</div>
-            <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{desc}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1419', marginBottom: 4 }}>{title}</div>
+            <div style={{ fontSize: 12, color: '#8b95a0', lineHeight: 1.5 }}>{desc}</div>
           </div>
         ))}
       </div>
@@ -195,25 +337,21 @@ function ActiveState({ firstName }: {
   const hasActivity = todayActivity.length > 0 || yestActivity.length > 0
 
   return (
-    <div style={{ padding: '40px 32px' }}>
+    <div style={{ padding: '32px 32px' }}>
       {/* Greeting */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.5px', marginBottom: 4 }}>
-          Welcome back, {firstName}.
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f1419', letterSpacing: '-0.5px', marginBottom: 4 }}>
+          Welcome back, <span style={{ color: '#2d5a4f' }}>{firstName}.</span>
         </h1>
-        <p style={{ fontSize: 13, color: '#888' }}>
+        <p style={{ fontSize: 13, color: '#8b95a0' }}>
           Add your first property to start tracking leads and views.
         </p>
       </div>
 
-      {/* Tip banner — hidden until user has data
-        (was: Properties with a video tour get 2.4× more leads)
-      */}
-
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }} className="kpi-grid">
         {kpis.map(({ label, value, icon: Icon, iconBg, iconColor, trend, footer }, i) => (
-          <div key={i} style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 14, padding: '18px 20px' }}>
+          <div key={i} style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 14, padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={15} color={iconColor} />
@@ -224,9 +362,9 @@ function ActiveState({ firstName }: {
                 padding: '2px 7px', borderRadius: 100
               }}>{trend}</span>
             </div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.5px', marginBottom: 2 }}>{value}</div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: '#888' }}>{label}</div>
-            <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{footer}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: '#0f1419', letterSpacing: '-0.5px', marginBottom: 2 }}>{value}</div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: '#8b95a0' }}>{label}</div>
+            <div style={{ fontSize: 11, color: '#b0bac5', marginTop: 2 }}>{footer}</div>
           </div>
         ))}
       </div>
@@ -236,32 +374,32 @@ function ActiveState({ firstName }: {
         {/* LEFT col */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Activity feed */}
-          <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Activity</span>
-              <Link to="/leads" style={{ fontSize: 12, color: '#2ab695', textDecoration: 'none', fontWeight: 500 }}>View all</Link>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1419' }}>Activity</span>
+              <Link to="/leads" style={{ fontSize: 12, color: '#2d5a4f', textDecoration: 'none', fontWeight: 500 }}>View all</Link>
             </div>
             <div style={{ padding: '0 22px 4px' }}>
               {!hasActivity ? (
-                <div style={{ padding: '32px 0', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                <div style={{ padding: '32px 0', textAlign: 'center', color: '#8b95a0', fontSize: 13 }}>
                   No activity yet — add your first property to get started.
                 </div>
               ) : (
                 [{ label: 'Today', items: todayActivity }, { label: 'Yesterday', items: yestActivity }].map(group => (
                   group.items.length > 0 && (
                     <div key={group.label}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 0 8px' }}>{group.label}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#b0bac5', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 0 8px' }}>{group.label}</div>
                       {group.items.map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < group.items.length - 1 ? '1px solid #f9f9f9' : 'none' }}>
                           <ActivityIcon type={item.type} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: 13, color: '#0f1419', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {item.title.split(item.property)[0]}
-                              <Link to="/properties" style={{ color: '#2ab695', textDecoration: 'none', fontWeight: 600 }}>{item.property}</Link>
+                              <Link to="/properties" style={{ color: '#2d5a4f', textDecoration: 'none', fontWeight: 600 }}>{item.property}</Link>
                               {item.title.split(item.property)[1]}
                             </div>
                           </div>
-                          <span style={{ fontSize: 11, color: '#bbb', flexShrink: 0 }}>{item.time}</span>
+                          <span style={{ fontSize: 11, color: '#b0bac5', flexShrink: 0 }}>{item.time}</span>
                         </div>
                       ))}
                     </div>
@@ -272,15 +410,15 @@ function ActiveState({ firstName }: {
           </div>
 
           {/* Performance chart */}
-          <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ padding: '18px 22px 12px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Performance</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1419' }}>Performance</span>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(['7', '30', '90'] as const).map(t => (
                   <button key={t} onClick={() => setChartTab(t)} style={{
                     padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer',
-                    background: chartTab === t ? '#1a1a1a' : 'transparent',
-                    color: chartTab === t ? '#fff' : '#888'
+                    background: chartTab === t ? '#2d5a4f' : 'transparent',
+                    color: chartTab === t ? '#fff' : '#8b95a0'
                   }}>{t}d</button>
                 ))}
               </div>
@@ -290,12 +428,12 @@ function ActiveState({ firstName }: {
               <div style={{ display: 'flex', gap: 28, marginBottom: 16 }}>
                 {[
                   { label: 'Views', value: '0', color: '#2563eb' },
-                  { label: 'Leads', value: '0',   color: '#2ab695' },
+                  { label: 'Leads', value: '0',   color: '#2d5a4f' },
                   { label: 'Conversion', value: '0.0%', color: '#d97706' },
                 ].map(s => (
                   <div key={s.label}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.3px' }}>{s.value}</div>
-                    <div style={{ fontSize: 11, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0f1419', letterSpacing: '-0.3px' }}>{s.value}</div>
+                    <div style={{ fontSize: 11, color: '#8b95a0', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
                       {s.label}
                     </div>
@@ -312,30 +450,26 @@ function ActiveState({ firstName }: {
                       <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
                     </linearGradient>
                     <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2ab695" stopOpacity="0.22" />
-                      <stop offset="100%" stopColor="#2ab695" stopOpacity="0" />
+                      <stop offset="0%" stopColor="#2d5a4f" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="#2d5a4f" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  {/* grid lines */}
                   {[0, 0.33, 0.66, 1].map((r, i) => (
-                    <line key={i} x1="0" y1={H * r} x2={W} y2={H * r} stroke="#f0f0f0" strokeWidth="1" />
+                    <line key={i} x1="0" y1={H * r} x2={W} y2={H * r} stroke="#f0f2f4" strokeWidth="1" />
                   ))}
-                  {/* views area */}
                   <path d={buildArea(CHART_VIEWS, W, H, maxViewVal)} fill="url(#gv)" />
                   <path d={buildPath(CHART_VIEWS, W, H, maxViewVal)} fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* leads area (scaled independently) */}
                   <path d={buildArea(CHART_LEADS, W, H, Math.max(...CHART_LEADS) * 1.5)} fill="url(#gl)" />
-                  <path d={buildPath(CHART_LEADS, W, H, Math.max(...CHART_LEADS) * 1.5)} fill="none" stroke="#2ab695" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* day labels */}
+                  <path d={buildPath(CHART_LEADS, W, H, Math.max(...CHART_LEADS) * 1.5)} fill="none" stroke="#2d5a4f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   {CHART_DAYS.map((d, i) => (
-                    <text key={i} x={(i / (CHART_DAYS.length - 1)) * W} y={H + 18} textAnchor="middle" fontSize="10" fill="#bbb">{d}</text>
+                    <text key={i} x={(i / (CHART_DAYS.length - 1)) * W} y={H + 18} textAnchor="middle" fontSize="10" fill="#b0bac5">{d}</text>
                   ))}
                 </svg>
               </div>
               {/* Legend */}
               <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-                {[{ color: '#2563eb', label: 'Views' }, { color: '#2ab695', label: 'Leads' }].map(l => (
-                  <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888' }}>
+                {[{ color: '#2563eb', label: 'Views' }, { color: '#2d5a4f', label: 'Leads' }].map(l => (
+                  <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#8b95a0' }}>
                     <div style={{ width: 16, height: 2, background: l.color, borderRadius: 1 }} />
                     {l.label}
                   </div>
@@ -348,13 +482,13 @@ function ActiveState({ firstName }: {
         {/* RIGHT col */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Needs attention */}
-          <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f5f5f5' }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Needs attention</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1419' }}>Needs attention</span>
             </div>
             <div style={{ padding: '4px 0' }}>
               {MOCK_ATTENTION.length === 0 ? (
-                <div style={{ padding: '32px 22px', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                <div style={{ padding: '32px 22px', textAlign: 'center', color: '#8b95a0', fontSize: 13 }}>
                   Nothing needs your attention right now.
                 </div>
               ) : MOCK_ATTENTION.map(({ color, title, desc }, i) => (
@@ -365,45 +499,62 @@ function ActiveState({ firstName }: {
                 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{title}</div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{desc}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1419' }}>{title}</div>
+                    <div style={{ fontSize: 11, color: '#8b95a0', marginTop: 1 }}>{desc}</div>
                   </div>
-                  <ChevronRight size={14} color="#ccc" style={{ flexShrink: 0 }} />
+                  <ChevronRight size={14} color="#c8cdd3" style={{ flexShrink: 0 }} />
                 </div>
               ))}
             </div>
           </div>
 
           {/* Top performing */}
-          <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: '1px solid #f0f2f4', borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Top pages</span>
-              <Link to="/properties" style={{ fontSize: 12, color: '#2ab695', textDecoration: 'none', fontWeight: 500 }}>See all</Link>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#0f1419' }}>Top pages</span>
+              <Link to="/properties" style={{ fontSize: 12, color: '#2d5a4f', textDecoration: 'none', fontWeight: 500 }}>See all</Link>
             </div>
             <div style={{ padding: '8px 0' }}>
               {MOCK_TOP.length === 0 ? (
-                <div style={{ padding: '32px 22px', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                <div style={{ padding: '32px 22px', textAlign: 'center', color: '#8b95a0', fontSize: 13 }}>
                   No pages published yet.
                 </div>
               ) : MOCK_TOP.map(({ name, leads, views, color }, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 22px' }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: '#1a1a1a', flex: 1, fontWeight: 500 }}>{name}</span>
-                  <span style={{ fontSize: 11, color: '#2ab695', fontWeight: 600 }}>{leads} leads</span>
-                  <span style={{ fontSize: 11, color: '#aaa' }}>{views}v</span>
-                  <span style={{ fontSize: 11, color: '#ccc', minWidth: 16, textAlign: 'right' }}>#{i + 1}</span>
+                  <span style={{ fontSize: 12, color: '#0f1419', flex: 1, fontWeight: 500 }}>{name}</span>
+                  <span style={{ fontSize: 11, color: '#2d5a4f', fontWeight: 600 }}>{leads} leads</span>
+                  <span style={{ fontSize: 11, color: '#8b95a0' }}>{views}v</span>
+                  <span style={{ fontSize: 11, color: '#c8cdd3', minWidth: 16, textAlign: 'right' }}>#{i + 1}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Add property CTA */}
-          <Link to="/properties/new" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: '#1a1a1a', color: '#fff',
-            padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-            textDecoration: 'none', transition: 'opacity 0.15s'
-          }}>
+          <Link
+            to="/properties/new"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: '#2d5a4f', color: '#fff',
+              padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 600,
+              textDecoration: 'none',
+              boxShadow: '0 2px 6px rgba(45,90,79,0.2)',
+              transition: 'background 0.15s, box-shadow 0.15s, transform 0.15s',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLAnchorElement
+              el.style.background = '#234a40'
+              el.style.boxShadow  = '0 8px 22px rgba(45,90,79,0.3)'
+              el.style.transform  = 'translateY(-1px)'
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLAnchorElement
+              el.style.background = '#2d5a4f'
+              el.style.boxShadow  = '0 2px 6px rgba(45,90,79,0.2)'
+              el.style.transform  = 'translateY(0)'
+            }}
+          >
             <Plus size={15} />
             Add property
             <ArrowUpRight size={13} style={{ opacity: 0.6 }} />
@@ -427,7 +578,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     Promise.all([
-      supabase.from('profiles').select('first_name, last_name, email, plan').eq('id', user.id).single(),
+      supabase.schema('agent_pages').from('profiles').select('first_name, last_name, email, plan').eq('id', user.id).single(),
       supabase.from('properties').select('id', { count: 'exact' }).eq('agent_id', user.id),
       supabase.from('leads').select('id', { count: 'exact' }).eq('agent_id', user.id),
     ]).then(([p, props, leads]) => {
@@ -438,23 +589,25 @@ export default function Dashboard() {
     })
   }, [user])
 
-  const firstName = profile?.first_name ?? 'there'
+  // Fix 1: never fall back to "there"
+  const firstName = resolveFirstName(profile, user?.email)
 
   return (
     <>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 979px) {
-          .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .kpi-grid  { grid-template-columns: repeat(2, 1fr) !important; }
           .body-grid { grid-template-columns: 1fr !important; }
-          .feature-grid { grid-template-columns: 1fr !important; }
+          .stat-grid { grid-template-columns: 1fr !important; }
+          .hero-grid { grid-template-columns: 1fr !important; }
           .hero-preview { display: none !important; }
         }
       `}</style>
-      <div style={{ background: '#f9f9f9', minHeight: 'calc(100vh - 60px)' }}>
+      <div style={{ background: '#f7f8f9', minHeight: 'calc(100vh - 60px)' }}>
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)' }}>
-            <div style={{ width: 24, height: 24, border: '2px solid #e5e7eb', borderTopColor: '#2ab695', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+            <div style={{ width: 24, height: 24, border: '2px solid #e5e7eb', borderTopColor: '#2d5a4f', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
           </div>
         ) : propertiesCount === 0 ? (
           <EmptyState firstName={firstName} />
