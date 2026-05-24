@@ -210,20 +210,7 @@ function StatusPill({ type, label }: { type: 'indexed' | 'crawled' | 'submitted'
   )
 }
 
-/* ── Will Submit Pill ── */
-function WillSubmitPill() {
-  return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', padding: '2px 7px',
-      borderRadius: 4, fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
-      textTransform: 'uppercase' as const,
-      background: 'var(--paper-warm,#fbfaf7)', color: 'var(--muted,#5a6470)',
-      border: '1px solid var(--line,#e6e8eb)',
-    }}>
-      Will submit
-    </div>
-  )
-}
+/* WillSubmitPill removed – unused */
 
 /* ── Elapsed Timer ── */
 function ElapsedTimer({ since }: { since: Date }) {

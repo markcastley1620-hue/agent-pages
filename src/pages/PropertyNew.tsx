@@ -356,7 +356,7 @@ export default function PropertyNew() {
                     place_id: form.placeId || null,
                     location_display: form.locationDisplay || null,
                     location_exact: form.locationExact,
-                    status: 'published',
+                    status: 'live',
                     published_at: new Date().toISOString(),
                   }
                   console.log('Publishing property:', payload)
