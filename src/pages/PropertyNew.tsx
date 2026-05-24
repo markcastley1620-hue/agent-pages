@@ -734,6 +734,28 @@ function Step1Form({ form, setField, onContinue }: {
       <GooglePlacesLocation form={form} setField={setField} />
 
       <div style={{ marginBottom: 18 }}>
+        <FieldLabel required>Community / Area</FieldLabel>
+        <LocationPicker
+          value={form.community ? { name: form.tower || form.subCommunity || form.community, hierarchy: [form.community, form.subCommunity, form.tower].filter(Boolean).join('>'), type: form.tower ? 'B' : form.subCommunity ? 'C' : 'N' } : null}
+          onChange={(loc: LocationValue | null) => {
+            if (!loc) {
+              setField('community', '')
+              setField('subCommunity', '')
+              setField('tower', '')
+            } else {
+              const parts = loc.hierarchy.split('>')
+              const locParts = parts.filter((p: string) => !['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain'].includes(p))
+              setField('community', locParts[0] || loc.name)
+              setField('subCommunity', locParts[1] || '')
+              setField('tower', locParts[2] || '')
+            }
+          }}
+          required
+        />
+        <FieldHint>This forms the address shown on your property page. Search 15,000+ Dubai communities.</FieldHint>
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
         <FieldLabel>Internal address (plot / villa number)</FieldLabel>
         <input className="pnw-input" value={form.addressInternal} onChange={e => setField('addressInternal', e.target.value)} placeholder="e.g. Unit 2304, Tower B — never shown publicly" />
       </div>
