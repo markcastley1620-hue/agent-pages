@@ -3,77 +3,62 @@ import { Download, Mail, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-r
 
 /* ── Mock data ─────────────────────────────────────────────────────────── */
 const KPI_CARDS = [
-  { key: 'views',      label: 'Total page views',  value: '12,847', change: '+28%',   period: 'vs last period', icon: 'views',   iconBg: '#d1fae5', iconColor: '#059669' },
-  { key: 'leads',      label: 'Leads captured',    value: '142',    change: '+34%',   period: 'vs last period', icon: 'leads',   iconBg: '#dbeafe', iconColor: '#2563eb' },
-  { key: 'time',       label: 'Avg time on page',  value: '3:42',   change: '+18s',   period: 'vs last period', icon: 'time',    iconBg: '#fef3c7', iconColor: '#d97706' },
-  { key: 'conversion', label: 'Conversion rate',   value: '1.1%',   change: '+0.2pp', period: 'vs last period', icon: 'conv',    iconBg: '#fff7ed', iconColor: '#ea580c' },
+  { key: 'views',      label: 'Total page views',  value: '0',     change: '—', period: '', icon: 'views',   iconBg: '#d1fae5', iconColor: '#059669' },
+  { key: 'leads',      label: 'Leads captured',    value: '0',     change: '—', period: '', icon: 'leads',   iconBg: '#dbeafe', iconColor: '#2563eb' },
+  { key: 'time',       label: 'Avg time on page',  value: '0:00',  change: '—', period: '', icon: 'time',    iconBg: '#fef3c7', iconColor: '#d97706' },
+  { key: 'conversion', label: 'Conversion rate',   value: '0.0%',  change: '—', period: '', icon: 'conv',    iconBg: '#fff7ed', iconColor: '#ea580c' },
 ]
 
 const CHART_DAYS = ['May 1','May 5','May 10','May 15','May 20','May 25','May 30']
-const CHART_VIEWS = [320, 480, 410, 590, 720, 860, 940]
-const CHART_LEADS = [4, 8, 6, 12, 14, 18, 22]
-const CHART_PREV  = [280, 350, 390, 420, 500, 580, 620]
+const CHART_VIEWS = [0, 0, 0, 0, 0, 0, 0]
+const CHART_LEADS = [0, 0, 0, 0, 0, 0, 0]
+const CHART_PREV  = [0, 0, 0, 0, 0, 0, 0]
 
 const TRAFFIC_SOURCES = [
-  { label: 'Google Search', pct: 42, views: 5395, leads: 60 },
-  { label: 'WhatsApp',      pct: 24, views: 3083, leads: 34 },
-  { label: 'Direct',        pct: 14, views: 1799, leads: 20 },
-  { label: 'Instagram',     pct: 10, views: 1285, leads: 14 },
-  { label: 'AI models',     pct:  7, views:  899, leads: 10 },
-  { label: 'Other',         pct:  3, views:  386, leads:  4 },
+  { label: 'Google Search', pct: 0, views: 0, leads: 0 },
+  { label: 'WhatsApp',      pct: 0, views: 0, leads: 0 },
+  { label: 'Direct',        pct: 0, views: 0, leads: 0 },
+  { label: 'Instagram',     pct: 0, views: 0, leads: 0 },
+  { label: 'AI models',     pct: 0, views: 0, leads: 0 },
+  { label: 'Other',         pct: 0, views: 0, leads: 0 },
 ]
 
 const AI_MODELS = [
-  { name: 'ChatGPT',    citations: 312, indexed: true  },
-  { name: 'Claude',     citations: 198, indexed: true  },
-  { name: 'Gemini',     citations: 154, indexed: true  },
-  { name: 'Perplexity', citations: 132, indexed: true  },
-  { name: 'Copilot',    citations:  87, indexed: false },
-  { name: 'Grok',       citations:  32, indexed: false },
+  { name: 'ChatGPT',    citations: 0, indexed: true  },
+  { name: 'Claude',     citations: 0, indexed: true  },
+  { name: 'Gemini',     citations: 0, indexed: true  },
+  { name: 'Perplexity', citations: 0, indexed: true  },
+  { name: 'Copilot',    citations: 0, indexed: false },
+  { name: 'Grok',       citations: 0, indexed: false },
 ]
 
-const PROPERTY_ROWS = [
-  { title: 'Marina Heights 4B',  community: 'Dubai Marina',    views: 3102, leads: 44, conv: '1.4%', avgTime: '4:12', grad: 'linear-gradient(135deg,#2d3e54,#4a7c9e)' },
-  { title: 'Palm Residences 7A', community: 'Palm Jumeirah',   views: 2480, leads: 32, conv: '1.3%', avgTime: '3:58', grad: 'linear-gradient(135deg,#c9a872,#8b6c35)' },
-  { title: 'Downtown Studio 2C', community: 'Downtown Dubai',  views: 1890, leads: 21, conv: '1.1%', avgTime: '3:31', grad: 'linear-gradient(135deg,#6366f1,#4338ca)' },
-  { title: 'JBR Sea View 1A',    community: 'JBR',             views: 1654, leads: 18, conv: '1.1%', avgTime: '3:44', grad: 'linear-gradient(135deg,#f97316,#ea580c)' },
-  { title: 'DIFC Penthouse 18F', community: 'DIFC',            views: 1203, leads: 14, conv: '1.2%', avgTime: '5:01', grad: 'linear-gradient(135deg,#0f172a,#334155)' },
-  { title: 'Bluewaters Apt 5B',  community: 'Bluewaters',      views:  987, leads:  9, conv: '0.9%', avgTime: '2:48', grad: 'linear-gradient(135deg,#0ea5e9,#0284c7)' },
-  { title: 'Creek Harbour 3A',   community: 'Creek Harbour',   views:  531, leads:  4, conv: '0.8%', avgTime: '2:14', grad: 'linear-gradient(135deg,#10b981,#059669)' },
-]
+const PROPERTY_ROWS: { title: string; community: string; views: number; leads: number; conv: string; avgTime: string; grad: string }[] = []
 
 const ENGAGEMENT = [
-  { label: 'Avg session',   value: '3:42' },
-  { label: 'Scroll depth',  value: '78%'  },
-  { label: 'Call clicks',   value: '186'  },
-  { label: 'Page shares',   value: '94'   },
+  { label: 'Avg session',   value: '0:00' },
+  { label: 'Scroll depth',  value: '0%'   },
+  { label: 'Call clicks',   value: '0'    },
+  { label: 'Page shares',   value: '0'    },
 ]
 
 const SECTION_VIEWS = [
-  { label: 'Photo gallery',   pct: 98 },
-  { label: 'Specs',           pct: 92 },
-  { label: 'AI description',  pct: 84 },
-  { label: 'Sold pricing',    pct: 71 },
-  { label: 'Map',             pct: 64 },
-  { label: 'Nearby',          pct: 48 },
-  { label: 'Lead form',       pct: 14 },
+  { label: 'Photo gallery',   pct: 0 },
+  { label: 'Specs',           pct: 0 },
+  { label: 'AI description',  pct: 0 },
+  { label: 'Sold pricing',    pct: 0 },
+  { label: 'Map',             pct: 0 },
+  { label: 'Nearby',          pct: 0 },
+  { label: 'Lead form',       pct: 0 },
 ]
 
-const COUNTRIES = [
-  { flag: '🇦🇪', name: 'United Arab Emirates', pct: 55.6 },
-  { flag: '🇬🇧', name: 'United Kingdom',        pct: 15.3 },
-  { flag: '🇮🇳', name: 'India',                 pct: 10.1 },
-  { flag: '🇸🇦', name: 'Saudi Arabia',           pct:  6.8 },
-  { flag: '🇸🇬', name: 'Singapore',              pct:  5.4 },
-  { flag: '🇺🇸', name: 'United States',          pct:  3.8 },
-]
+// COUNTRIES removed — no data yet
 
 const FUNNEL = [
-  { label: 'Viewed page',         count: 12847 },
-  { label: 'Form interactions',   count:  1847 },
-  { label: 'Leads submitted',     count:   142 },
-  { label: 'Viewings booked',     count:    47 },
-  { label: 'Offers made',         count:     8 },
+  { label: 'Viewed page',         count: 0 },
+  { label: 'Form interactions',   count: 0 },
+  { label: 'Leads submitted',     count: 0 },
+  { label: 'Viewings booked',     count: 0 },
+  { label: 'Offers made',         count: 0 },
 ]
 
 /* ── SVG helpers ────────────────────────────────────────────────────────── */
@@ -147,8 +132,8 @@ export default function Analytics() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   const W = 560, H = 110
-  const maxViews = Math.max(...CHART_VIEWS) * 1.15
-  const maxLeads = Math.max(...CHART_LEADS) * 1.4
+  const maxViews = 1000
+  const maxLeads = 50
 
   function handleSort(col: string) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -231,7 +216,7 @@ export default function Analytics() {
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: kpi.iconBg, color: kpi.iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <KpiIcon icon={kpi.icon} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, background: '#ecfdf5', color: '#059669', padding: '2px 7px', borderRadius: 100 }}>{kpi.change}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, background: '#f0f2f4', color: '#8b95a0', padding: '2px 7px', borderRadius: 100 }}>{kpi.change}</span>
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.03em', marginBottom: 2 }}>{kpi.value}</div>
                 <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--muted,#5a6470)' }}>{kpi.label}</div>
@@ -269,7 +254,7 @@ export default function Analytics() {
               {[0,0.33,0.66,1].map((r,i) => (
                 <g key={i}>
                   <line x1="32" y1={H * r} x2={W} y2={H * r} stroke="#f0f0f0" strokeWidth="1" />
-                  <text x="28" y={H * r + 4} textAnchor="end" fontSize="9" fill="#bbb">{Math.round(Math.max(...CHART_VIEWS) * 1.15 * (1 - r))}</text>
+                  <text x="28" y={H * r + 4} textAnchor="end" fontSize="9" fill="#bbb">{Math.round(maxViews * (1 - r))}</text>
                 </g>
               ))}
               {/* Previous period dashed */}
@@ -356,7 +341,13 @@ export default function Analytics() {
                 </tr>
               </thead>
               <tbody>
-                {PROPERTY_ROWS.map((row, i) => (
+                {PROPERTY_ROWS.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '40px 22px', textAlign: 'center', color: 'var(--muted,#5a6470)', fontSize: 13 }}>
+                      No property pages yet — add your first property to see performance data here.
+                    </td>
+                  </tr>
+                ) : PROPERTY_ROWS.map((row, i) => (
                   <tr key={i} style={{ borderBottom: i < PROPERTY_ROWS.length - 1 ? '1px solid var(--line-soft,#f0f2f4)' : 'none' }}>
                     <td style={{ padding: '12px 22px', display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 36, height: 28, borderRadius: 6, background: row.grad, flexShrink: 0 }} />
@@ -416,17 +407,8 @@ export default function Analytics() {
           {/* Geography */}
           <Card>
             <CardHead title="Where buyers are based" />
-            <div style={{ padding: '12px 0' }}>
-              {COUNTRIES.map((c, i) => (
-                <div key={i} style={{ padding: '10px 22px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: i < COUNTRIES.length - 1 ? '1px solid var(--line-soft,#f0f2f4)' : 'none' }}>
-                  <span style={{ fontSize: 18 }}>{c.flag}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: 'var(--ink,#0f1419)' }}>{c.name}</span>
-                  <div style={{ width: 80, height: 4, background: 'var(--line-soft,#f0f2f4)', borderRadius: 99 }}>
-                    <div style={{ height: '100%', width: `${(c.pct / 60) * 100}%`, background: 'var(--accent,#2d5a4f)', borderRadius: 99 }} />
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted,#5a6470)', minWidth: 36, textAlign: 'right' }}>{c.pct}%</span>
-                </div>
-              ))}
+            <div style={{ padding: '40px 22px', textAlign: 'center', color: 'var(--muted,#5a6470)', fontSize: 13 }}>
+              No data yet — add your first property to start tracking visitor locations.
             </div>
           </Card>
 
@@ -435,7 +417,7 @@ export default function Analytics() {
             <CardHead title="Lead funnel" />
             <div style={{ padding: '20px 22px' }}>
               {FUNNEL.map((step, i) => {
-                const maxCount = FUNNEL[0].count
+                const maxCount = FUNNEL[0].count || 1
                 const pct = Math.round((step.count / maxCount) * 100)
                 return (
                   <div key={i} style={{ marginBottom: i < FUNNEL.length - 1 ? 14 : 0 }}>

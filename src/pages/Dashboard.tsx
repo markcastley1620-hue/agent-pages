@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Users, Plus, ChevronRight, X, Eye, Calendar,
-  Percent, Zap, Globe, AlertTriangle, Info, CheckCircle,
-  ArrowUpRight, Activity, Bell
+  Users, Plus, ChevronRight, Eye, Calendar,
+  Percent, Zap, Globe, CheckCircle,
+  ArrowUpRight, Activity
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -13,31 +13,15 @@ interface Profile { first_name: string; last_name: string; email: string; plan: 
 interface MockLead { type: 'lead' | 'view' | 'book' | 'publish'; title: string; property: string; time: string; day: 'today' | 'yesterday' }
 
 /* ── mock data ──────────────────────────────────────────────────────────── */
-const MOCK_ACTIVITY: MockLead[] = [
-  { type: 'lead',    title: 'Ahmed Al-Rashid submitted a lead',      property: 'Marina Heights 4B',    time: '9:14 AM',  day: 'today' },
-  { type: 'view',    title: 'Your page was viewed 12 times',          property: 'Palm Residences 7A',   time: '8:41 AM',  day: 'today' },
-  { type: 'book',    title: 'Sarah Chen booked a viewing',            property: 'Downtown Studio 2C',   time: '7:55 AM',  day: 'today' },
-  { type: 'lead',    title: 'Khalid Mansoor submitted a lead',        property: 'JBR Sea View 1A',      time: '11:20 PM', day: 'yesterday' },
-  { type: 'publish', title: 'You published a new listing',            property: 'DIFC Penthouse 18F',   time: '4:05 PM',  day: 'yesterday' },
-  { type: 'view',    title: 'Your page was viewed 7 times',           property: 'Marina Heights 4B',    time: '2:30 PM',  day: 'yesterday' },
-]
+const MOCK_ACTIVITY: MockLead[] = []
 
-const MOCK_TOP: { name: string; leads: number; views: number; color: string }[] = [
-  { name: 'Marina Heights 4B',  leads: 18, views: 312, color: '#2ab695' },
-  { name: 'Palm Residences 7A', leads: 11, views: 204, color: '#c9a84c' },
-  { name: 'Downtown Studio 2C', leads:  8, views: 167, color: '#6366f1' },
-  { name: 'JBR Sea View 1A',    leads:  5, views: 98,  color: '#f97316' },
-]
+const MOCK_TOP: { name: string; leads: number; views: number; color: string }[] = []
 
-const MOCK_ATTENTION = [
-  { icon: AlertTriangle, color: '#f59e0b', title: '2 properties missing WhatsApp',    desc: 'Connect WhatsApp to capture leads instantly.' },
-  { icon: Info,          color: '#6366f1', title: 'Profile photo not uploaded',        desc: 'Profiles with photos get 3× more leads.' },
-  { icon: Bell,          color: '#ef4444', title: '3 leads haven\'t been followed up', desc: 'Leads go cold after 48h. Reply now.' },
-]
+const MOCK_ATTENTION: { color: string; title: string; desc: string }[] = []
 
 /* chart points for 7-day view (views + leads) */
-const CHART_VIEWS  = [42, 58, 51, 74, 89, 102, 95]
-const CHART_LEADS  = [ 3,  5,  4,  8,  9,  12, 10]
+const CHART_VIEWS  = [0, 0, 0, 0, 0, 0, 0]
+const CHART_LEADS  = [0, 0, 0, 0, 0, 0, 0]
 const CHART_DAYS   = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function buildPath(data: number[], w: number, h: number, max: number) {
@@ -191,24 +175,24 @@ function EmptyState({ firstName }: { firstName: string }) {
 /* ══════════════════════════════════════════════════════════════════════════
    ACTIVE STATE
 ═══════════════════════════════════════════════════════════════════════════ */
-function ActiveState({ firstName, leadsCount }: {
+function ActiveState({ firstName }: {
   firstName: string; propertiesCount: number; leadsCount: number
 }) {
-  const [tipDismissed, setTipDismissed] = useState(false)
   const [chartTab, setChartTab] = useState<'7' | '30' | '90'>('7')
 
   const kpis = [
-    { label: 'New leads',       value: leadsCount > 0 ? leadsCount : 9,  icon: Users,     iconBg: '#d1fae5', iconColor: '#059669', trend: '+3',  footer: 'vs. yesterday' },
-    { label: 'Page views',      value: 312,  icon: Eye,       iconBg: '#dbeafe', iconColor: '#2563eb', trend: '+18%', footer: 'last 7 days' },
-    { label: 'Viewings booked', value: 4,    icon: Calendar,  iconBg: '#fef3c7', iconColor: '#d97706', trend: '+2',  footer: 'this week' },
-    { label: 'Lead conversion', value: '2.9%', icon: Percent, iconBg: '#fff7ed', iconColor: '#ea580c', trend: '+0.4%', footer: 'vs. last month' },
+    { label: 'New leads',       value: 0,      icon: Users,     iconBg: '#d1fae5', iconColor: '#059669', trend: '—', footer: 'vs. yesterday' },
+    { label: 'Page views',      value: 0,      icon: Eye,       iconBg: '#dbeafe', iconColor: '#2563eb', trend: '—', footer: 'last 7 days' },
+    { label: 'Viewings booked', value: 0,      icon: Calendar,  iconBg: '#fef3c7', iconColor: '#d97706', trend: '—', footer: 'this week' },
+    { label: 'Lead conversion', value: '0.0%', icon: Percent,   iconBg: '#fff7ed', iconColor: '#ea580c', trend: '—', footer: 'vs. last month' },
   ]
 
-  const maxViewVal = Math.max(...CHART_VIEWS) * 1.15
+  const maxViewVal = 120
   const W = 480; const H = 90
 
   const todayActivity = MOCK_ACTIVITY.filter(a => a.day === 'today')
   const yestActivity  = MOCK_ACTIVITY.filter(a => a.day === 'yesterday')
+  const hasActivity = todayActivity.length > 0 || yestActivity.length > 0
 
   return (
     <div style={{ padding: '40px 32px' }}>
@@ -218,28 +202,13 @@ function ActiveState({ firstName, leadsCount }: {
           Welcome back, {firstName}.
         </h1>
         <p style={{ fontSize: 13, color: '#888' }}>
-          Here's what's happened since yesterday · <strong style={{ color: '#2ab695' }}>+3 new leads</strong>, <strong style={{ color: '#2563eb' }}>47 views.</strong>
+          Add your first property to start tracking leads and views.
         </p>
       </div>
 
-      {/* Tip banner */}
-      {!tipDismissed && (
-        <div style={{
-          background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 12,
-          padding: '12px 16px', marginBottom: 24,
-          display: 'flex', alignItems: 'center', gap: 12
-        }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Zap size={14} color="#059669" />
-          </div>
-          <span style={{ fontSize: 13, color: '#065f46', flex: 1 }}>
-            <strong>Tip:</strong> Properties with a video tour get <strong>2.4× more leads</strong>. Add one to your top listings.
-          </span>
-          <button onClick={() => setTipDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6ee7b7', padding: 4, display: 'flex' }}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      {/* Tip banner — hidden until user has data
+        (was: Properties with a video tour get 2.4× more leads)
+      */}
 
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }} className="kpi-grid">
@@ -251,7 +220,7 @@ function ActiveState({ firstName, leadsCount }: {
               </div>
               <span style={{
                 fontSize: 11, fontWeight: 600,
-                background: '#ecfdf5', color: '#059669',
+                background: '#f0f2f4', color: '#8b95a0',
                 padding: '2px 7px', borderRadius: 100
               }}>{trend}</span>
             </div>
@@ -273,24 +242,32 @@ function ActiveState({ firstName, leadsCount }: {
               <Link to="/leads" style={{ fontSize: 12, color: '#2ab695', textDecoration: 'none', fontWeight: 500 }}>View all</Link>
             </div>
             <div style={{ padding: '0 22px 4px' }}>
-              {[{ label: 'Today', items: todayActivity }, { label: 'Yesterday', items: yestActivity }].map(group => (
-                <div key={group.label}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 0 8px' }}>{group.label}</div>
-                  {group.items.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < group.items.length - 1 ? '1px solid #f9f9f9' : 'none' }}>
-                      <ActivityIcon type={item.type} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {item.title.split(item.property)[0]}
-                          <Link to="/properties" style={{ color: '#2ab695', textDecoration: 'none', fontWeight: 600 }}>{item.property}</Link>
-                          {item.title.split(item.property)[1]}
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 11, color: '#bbb', flexShrink: 0 }}>{item.time}</span>
-                    </div>
-                  ))}
+              {!hasActivity ? (
+                <div style={{ padding: '32px 0', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                  No activity yet — add your first property to get started.
                 </div>
-              ))}
+              ) : (
+                [{ label: 'Today', items: todayActivity }, { label: 'Yesterday', items: yestActivity }].map(group => (
+                  group.items.length > 0 && (
+                    <div key={group.label}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 0 8px' }}>{group.label}</div>
+                      {group.items.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < group.items.length - 1 ? '1px solid #f9f9f9' : 'none' }}>
+                          <ActivityIcon type={item.type} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {item.title.split(item.property)[0]}
+                              <Link to="/properties" style={{ color: '#2ab695', textDecoration: 'none', fontWeight: 600 }}>{item.property}</Link>
+                              {item.title.split(item.property)[1]}
+                            </div>
+                          </div>
+                          <span style={{ fontSize: 11, color: '#bbb', flexShrink: 0 }}>{item.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ))
+              )}
             </div>
           </div>
 
@@ -312,9 +289,9 @@ function ActiveState({ firstName, leadsCount }: {
               {/* Stats row */}
               <div style={{ display: 'flex', gap: 28, marginBottom: 16 }}>
                 {[
-                  { label: 'Views', value: '312', color: '#2563eb' },
-                  { label: 'Leads', value: '9',   color: '#2ab695' },
-                  { label: 'Conversion', value: '2.9%', color: '#d97706' },
+                  { label: 'Views', value: '0', color: '#2563eb' },
+                  { label: 'Leads', value: '0',   color: '#2ab695' },
+                  { label: 'Conversion', value: '0.0%', color: '#d97706' },
                 ].map(s => (
                   <div key={s.label}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.3px' }}>{s.value}</div>
@@ -376,15 +353,17 @@ function ActiveState({ firstName, leadsCount }: {
               <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Needs attention</span>
             </div>
             <div style={{ padding: '4px 0' }}>
-              {MOCK_ATTENTION.map(({ icon: Icon, color, title, desc }, i) => (
+              {MOCK_ATTENTION.length === 0 ? (
+                <div style={{ padding: '32px 22px', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                  Nothing needs your attention right now.
+                </div>
+              ) : MOCK_ATTENTION.map(({ color, title, desc }, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 22px',
                   borderBottom: i < MOCK_ATTENTION.length - 1 ? '1px solid #f9f9f9' : 'none',
                   cursor: 'pointer'
                 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={15} color={color} />
-                  </div>
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{title}</div>
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{desc}</div>
@@ -402,7 +381,11 @@ function ActiveState({ firstName, leadsCount }: {
               <Link to="/properties" style={{ fontSize: 12, color: '#2ab695', textDecoration: 'none', fontWeight: 500 }}>See all</Link>
             </div>
             <div style={{ padding: '8px 0' }}>
-              {MOCK_TOP.map(({ name, leads, views, color }, i) => (
+              {MOCK_TOP.length === 0 ? (
+                <div style={{ padding: '32px 22px', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                  No pages published yet.
+                </div>
+              ) : MOCK_TOP.map(({ name, leads, views, color }, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 22px' }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
                   <span style={{ fontSize: 12, color: '#1a1a1a', flex: 1, fontWeight: 500 }}>{name}</span>
