@@ -656,6 +656,13 @@ function Step1Form({ form, setField, onContinue }: {
         Watch the live preview on the right update as you fill in details — your property page builds in real time.
       </p>
 
+      {/* Page title — moved to top of step 1 */}
+      <div style={{ marginBottom: 28 }}>
+        <FieldLabel required>Page title</FieldLabel>
+        <input className="pnw-input" value={form.pageTitle} onChange={e => setField('pageTitle', e.target.value)} placeholder="e.g. Stunning 3BR Villa with Pool in Emirates Hills" />
+        <FieldHint>Be descriptive — this becomes your headline and URL slug</FieldHint>
+      </div>
+
       {/* Property type — compact horizontal cards */}
       <div style={{ marginBottom: 28 }}>
         <FieldLabel required>Property type</FieldLabel>
@@ -760,14 +767,7 @@ function Step1Form({ form, setField, onContinue }: {
         <input className="pnw-input" value={form.addressInternal} onChange={e => setField('addressInternal', e.target.value)} placeholder="e.g. Unit 2304, Tower B — never shown publicly" />
       </div>
 
-      {/* Page title */}
-      <SectionDivider>Page title</SectionDivider>
 
-      <div style={{ marginBottom: 28 }}>
-        <FieldLabel required>Title</FieldLabel>
-        <input className="pnw-input" value={form.pageTitle} onChange={e => setField('pageTitle', e.target.value)} placeholder="e.g. Stunning 3BR Villa with Pool in Emirates Hills" />
-        <FieldHint>Be descriptive — this becomes your headline and URL slug</FieldHint>
-      </div>
 
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
