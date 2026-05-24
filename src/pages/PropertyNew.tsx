@@ -18,7 +18,10 @@ function getInitials(firstName?: string, lastName?: string, email?: string) {
 /* ── types ── */
 type PropertyType = 'Villa' | 'Apartment' | 'Townhouse' | 'Penthouse' | 'Plot / Land' | 'Other'
 type Purpose = 'For sale' | 'For rent'
+type Tone = 'Refined' | 'Warm' | 'Investor'
+
 interface FormState {
+  // Step 1
   propertyType: PropertyType | ''
   purpose: Purpose | ''
   community: string
@@ -26,7 +29,29 @@ interface FormState {
   tower: string
   addressInternal: string
   pageTitle: string
+  // Step 2
+  beds: string
+  baths: string
+  sqft: string
+  plotSqft: string
+  price: string
+  feature1: string
+  feature2: string
+  feature3: string
+  feature4: string
+  // Step 3
+  tone: Tone
+  description: string
+  // Step 4
+  photos: File[]
+  // Step 5
+  slug: string
+  customDomain: string
+  showSoldPricing: boolean
+  showLeadForm: boolean
+  showOnPortfolio: boolean
 }
+
 interface AgentProfile {
   first_name?: string
   last_name?: string
@@ -65,6 +90,11 @@ export default function PropertyNew() {
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop')
   const [form, setForm] = useState<FormState>({
     propertyType: '', purpose: '', community: '', subCommunity: '', tower: '', addressInternal: '', pageTitle: '',
+    beds: '', baths: '', sqft: '', plotSqft: '', price: '',
+    feature1: '', feature2: '', feature3: '', feature4: '',
+    tone: 'Refined', description: '',
+    photos: [],
+    slug: '', customDomain: '', showSoldPricing: false, showLeadForm: true, showOnPortfolio: true,
   })
 
   /* load agent profile */
@@ -75,7 +105,7 @@ export default function PropertyNew() {
   }, [user])
 
   /* mark unsaved on form change */
-  const setField = (key: keyof FormState, val: string) => {
+  const setField = (key: keyof FormState, val: string | boolean | File[]) => {
     setSaved(false)
     setForm(f => ({ ...f, [key]: val }))
     setTimeout(() => setSaved(true), 800)
@@ -84,7 +114,9 @@ export default function PropertyNew() {
   /* derived values */
   const titleSlug = slugify(form.pageTitle)
   const agentSlug = profile?.slug || 'your-name'
-  const propSlug = titleSlug || 'property-title'
+  const effectiveSlug = form.slug || titleSlug || 'property-title'
+  const propSlug = effectiveSlug
+  const formattedPrice = form.price ? 'AED ' + Number(form.price).toLocaleString() : 'AED —'
   const initials = getInitials(profile?.first_name, profile?.last_name, user?.email || '')
   const agentName = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || user?.email || 'Agent' : (user?.email || 'Agent')
 
@@ -148,7 +180,7 @@ export default function PropertyNew() {
 
         .pnw-type-card:hover { border-color: var(--accent-bright,#3d8a76) !important; background: var(--accent-soft,#e8f0ed) !important; }
         .pnw-purpose-card:hover { border-color: var(--accent-bright,#3d8a76) !important; background: var(--accent-soft,#e8f0ed) !important; }
-        .pnw-input { width:100%; padding:11px 14px; background:#fff; border:1px solid var(--line,#e6e8eb); border-radius:9px; font-size:14px; color:var(--ink,#0f1419); font-family:inherit; transition:all .12s; line-height:1.5; }
+        .pnw-input { width:100%; padding:11px 14px; background:#fff; border:1px solid var(--line,#e6e8eb); border-radius:9px; font-size:14px; color:var(--ink,#0f1419); font-family:inherit; transition:all .12s; line-height:1.5; box-sizing:border-box; }
         .pnw-input::placeholder { color:var(--quiet,#8b95a0); }
         .pnw-input:focus { outline:none; border-color:var(--accent,#2d5a4f); box-shadow:0 0 0 3px rgba(45,90,79,0.08); }
       `}</style>
@@ -236,11 +268,66 @@ export default function PropertyNew() {
         {/* ── MIDDLE: Form ── */}
         <main style={{ padding: '48px 56px 120px', overflowY: 'auto', background: 'var(--paper-warm,#fbfaf7)' }}>
           {step === 1 && <Step1Form form={form} setField={setField} onContinue={() => setStep(2)} />}
-          {step === 2 && <StepPlaceholder n={2} title="Specs & price" onBack={() => setStep(1)} onContinue={() => setStep(3)} />}
-          {step === 3 && <StepPlaceholder n={3} title="AI description" onBack={() => setStep(2)} onContinue={() => setStep(4)} />}
-          {step === 4 && <StepPlaceholder n={4} title="Photos" onBack={() => setStep(3)} onContinue={() => setStep(5)} />}
-          {step === 5 && <StepPlaceholder n={5} title="URL & options" onBack={() => setStep(4)} onContinue={() => setStep(6)} />}
-          {step === 6 && <StepPlaceholder n={6} title="Review & publish" onBack={() => setStep(5)} onContinue={() => navigate('/properties')} />}
+          {step === 2 && <Step2Form form={form} setField={setField} onBack={() => setStep(1)} onContinue={() => setStep(3)} />}
+          {step === 3 && <Step3Form form={form} setField={setField} onBack={() => setStep(2)} onContinue={() => setStep(4)} />}
+          {step === 4 && <Step4Form form={form} setField={setField} onBack={() => setStep(3)} onContinue={() => setStep(5)} />}
+          {step === 5 && <Step5Form form={form} setField={setField} onBack={() => setStep(4)} onContinue={() => setStep(6)} agentSlug={agentSlug} />}
+          {step === 6 && (
+            <Step6Form
+              form={form}
+              setField={setField}
+              onBack={() => setStep(5)}
+              agentSlug={agentSlug}
+              formattedPrice={formattedPrice}
+              onPublish={async () => {
+                if (!user) return
+                await supabase.from('properties').upsert({
+                  user_id: user.id,
+                  property_type: form.propertyType,
+                  listing_purpose: form.purpose,
+                  community: form.community,
+                  sub_community: form.subCommunity,
+                  tower: form.tower,
+                  address: form.addressInternal,
+                  title: form.pageTitle,
+                  beds: form.beds ? Number(form.beds) : null,
+                  baths: form.baths ? Number(form.baths) : null,
+                  sqft: form.sqft ? Number(form.sqft) : null,
+                  plot_sqft: form.plotSqft ? Number(form.plotSqft) : null,
+                  price: form.price ? Number(form.price) : null,
+                  features: [form.feature1, form.feature2, form.feature3, form.feature4].filter(Boolean),
+                  description: form.description,
+                  description_tone: form.tone,
+                  slug: form.slug || slugify(form.pageTitle),
+                  custom_domain: form.customDomain || null,
+                  show_sold_pricing: form.showSoldPricing,
+                  show_lead_form: form.showLeadForm,
+                  show_on_portfolio: form.showOnPortfolio,
+                  status: 'published',
+                })
+                navigate('/properties')
+              }}
+              onSaveDraft={async () => {
+                if (!user) return
+                await supabase.from('properties').upsert({
+                  user_id: user.id,
+                  title: form.pageTitle,
+                  slug: form.slug || slugify(form.pageTitle),
+                  status: 'draft',
+                  property_type: form.propertyType,
+                  listing_purpose: form.purpose,
+                  community: form.community,
+                  sub_community: form.subCommunity,
+                  beds: form.beds ? Number(form.beds) : null,
+                  baths: form.baths ? Number(form.baths) : null,
+                  sqft: form.sqft ? Number(form.sqft) : null,
+                  price: form.price ? Number(form.price) : null,
+                  description: form.description,
+                })
+                navigate('/properties')
+              }}
+            />
+          )}
         </main>
 
         {/* ── RIGHT: Live Preview ── */}
@@ -292,8 +379,10 @@ export default function PropertyNew() {
                 fontSize: 10, color: 'var(--muted,#5a6470)', border: '1px solid #e8e8e8',
                 overflow: 'hidden', whiteSpace: 'nowrap',
               }}>
-                <span style={{ color: 'var(--quiet,#8b95a0)' }}>agentpages.io/{agentSlug}/</span>
-                <span style={{ color: '#22c55e', fontWeight: 600 }}>{propSlug}</span>
+                {form.customDomain
+                  ? <span style={{ color: '#22c55e', fontWeight: 600 }}>{form.customDomain}</span>
+                  : <><span style={{ color: 'var(--quiet,#8b95a0)' }}>agentpages.io/{agentSlug}/</span><span style={{ color: '#22c55e', fontWeight: 600 }}>{propSlug}</span></>
+                }
               </div>
             </div>
 
@@ -320,17 +409,26 @@ export default function PropertyNew() {
               </div>
 
               {/* Hero */}
-              <div style={{
-                height: 160, background: 'linear-gradient(135deg, #f0ede6 0%, #e8e2d8 100%)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0a890" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="m21 15-5-5L5 21" />
-                </svg>
-                <div style={{ fontSize: 10, color: '#b0a890', textAlign: 'center', lineHeight: 1.5 }}>Photos added in step 4</div>
-              </div>
+              {form.photos[0] ? (
+                <div style={{ height: 160, position: 'relative', overflow: 'hidden' }}>
+                  <img src={URL.createObjectURL(form.photos[0])} alt="hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '2px 8px', borderRadius: 20, fontSize: 9.5, fontWeight: 600 }}>
+                    {form.photos.length} / 18
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  height: 160, background: 'linear-gradient(135deg, #f0ede6 0%, #e8e2d8 100%)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0a890" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="m21 15-5-5L5 21" />
+                  </svg>
+                  <div style={{ fontSize: 10, color: '#b0a890', textAlign: 'center', lineHeight: 1.5 }}>Photos added in step 4</div>
+                </div>
+              )}
 
               {/* Content */}
               <div style={{ padding: '14px 16px' }}>
@@ -370,7 +468,7 @@ export default function PropertyNew() {
 
                 {/* Price + purpose */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--quiet,#8b95a0)' }}>AED —</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: form.price ? 'var(--ink,#0f1419)' : 'var(--quiet,#8b95a0)' }}>{formattedPrice}</div>
                   {form.purpose && (
                     <div style={{ padding: '2px 8px', background: form.purpose === 'For sale' ? '#dbeafe' : '#fef3c7', color: form.purpose === 'For sale' ? '#1d4ed8' : '#92400e', borderRadius: 20, fontSize: 9.5, fontWeight: 600 }}>
                       {form.purpose}
@@ -380,20 +478,26 @@ export default function PropertyNew() {
 
                 {/* Specs grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 14, background: 'var(--paper-warm,#fbfaf7)', borderRadius: 8, padding: '10px 8px' }}>
-                  {['Beds', 'Baths', 'Sqft', 'Plot'].map(label => (
+                  {[
+                    { label: 'Beds', val: form.beds },
+                    { label: 'Baths', val: form.baths },
+                    { label: 'Sqft', val: form.sqft ? Number(form.sqft).toLocaleString() : '' },
+                    { label: 'Plot', val: form.plotSqft ? Number(form.plotSqft).toLocaleString() : '' },
+                  ].map(({ label, val }) => (
                     <div key={label} style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--quiet,#8b95a0)', marginBottom: 1 }}>—</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: val ? 'var(--ink,#0f1419)' : 'var(--quiet,#8b95a0)', marginBottom: 1 }}>{val || '—'}</div>
                       <div style={{ fontSize: 9, color: 'var(--quiet,#8b95a0)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
                     </div>
                   ))}
                 </div>
 
-                {/* AI description placeholder */}
+                {/* AI description */}
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--quiet,#8b95a0)', fontWeight: 600, marginBottom: 6 }}>ABOUT THIS PROPERTY</div>
-                  <div style={{ border: '1.5px dashed var(--line,#e6e8eb)', borderRadius: 6, padding: '10px 12px', fontSize: 10, color: 'var(--quiet,#8b95a0)', fontStyle: 'italic', lineHeight: 1.5 }}>
-                    AI description appears in step 3
-                  </div>
+                  {form.description
+                    ? <div style={{ fontSize: 10, color: 'var(--muted,#5a6470)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>{form.description}</div>
+                    : <div style={{ border: '1.5px dashed var(--line,#e6e8eb)', borderRadius: 6, padding: '10px 12px', fontSize: 10, color: 'var(--quiet,#8b95a0)', fontStyle: 'italic', lineHeight: 1.5 }}>AI description appears in step 3</div>
+                  }
                 </div>
 
                 {/* Agent block */}
@@ -429,21 +533,31 @@ export default function PropertyNew() {
             </div>
           </div>
 
-          {/* Tip card */}
-          <div style={{
-            marginTop: 14, background: '#dcfce7', borderRadius: 10, padding: '12px 14px',
-            fontSize: 11, color: '#15803d', lineHeight: 1.6,
-          }}>
-            💡 <strong>Watch the URL build up</strong> — your title turns into the public URL slug. You can fully customise it in step 5.
-          </div>
+          {/* Tip / CTA */}
+          {step === 1 && (
+            <div style={{ marginTop: 14, background: '#dcfce7', borderRadius: 10, padding: '12px 14px', fontSize: 11, color: '#15803d', lineHeight: 1.6 }}>
+              💡 <strong>Watch the URL build up</strong> — your title turns into the public URL slug. You can fully customise it in step 5.
+            </div>
+          )}
+          {step === 6 && (
+            <div style={{ marginTop: 14 }}>
+              <a href="#" style={{ display: 'block', textAlign: 'center', padding: '9px 0', background: 'var(--accent,#2d5a4f)', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>View full page ↗</a>
+            </div>
+          )}
         </aside>
       </div>
     </AppShell>
   )
 }
 
-/* ── Step 1 Form ── */
-function Step1Form({ form, setField, onContinue }: { form: FormState; setField: (k: keyof FormState, v: string) => void; onContinue: () => void }) {
+/* ═══════════════════════════════════════════════════════════════
+   STEP 1 — The basics
+═══════════════════════════════════════════════════════════════ */
+function Step1Form({ form, setField, onContinue }: {
+  form: FormState
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  onContinue: () => void
+}) {
   return (
     <div>
       <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 1 OF 6</div>
@@ -554,20 +668,475 @@ function Step1Form({ form, setField, onContinue }: { form: FormState; setField: 
   )
 }
 
-/* ── Placeholder step ── */
-function StepPlaceholder({ n, title, onBack, onContinue }: { n: number; title: string; onBack: () => void; onContinue: () => void }) {
+/* ═══════════════════════════════════════════════════════════════
+   STEP 2 — Specs & price
+═══════════════════════════════════════════════════════════════ */
+function Step2Form({ form, setField, onBack, onContinue }: {
+  form: FormState
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  onBack: () => void
+  onContinue: () => void
+}) {
   return (
     <div>
-      <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP {n} OF 6</div>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', marginBottom: 16 }}>{title}</h1>
-      <div style={{ padding: '48px 32px', background: '#fff', borderRadius: 12, border: '1.5px dashed var(--line,#e6e8eb)', textAlign: 'center', color: 'var(--muted,#5a6470)', fontSize: 14, marginBottom: 32 }}>
-        Coming soon — {title}
+      <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 2 OF 6</div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>Specs &amp; price</h1>
+      <p style={{ fontSize: 15, color: 'var(--muted,#5a6470)', marginBottom: 36, lineHeight: 1.6, maxWidth: 560 }}>
+        The numbers buyers scan first — beds, baths, size, price, and the features that make this one stand out.
+      </p>
+
+      {/* Beds + Baths */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div>
+          <FieldLabel required>Beds</FieldLabel>
+          <input type="number" min="0" className="pnw-input" value={form.beds} onChange={e => setField('beds', e.target.value)} placeholder="e.g. 4" />
+        </div>
+        <div>
+          <FieldLabel required>Baths</FieldLabel>
+          <input type="number" min="0" className="pnw-input" value={form.baths} onChange={e => setField('baths', e.target.value)} placeholder="e.g. 5" />
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: '#fff', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back</button>
-        <button onClick={onContinue} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff', fontFamily: 'inherit' }}>
-          {n < 6 ? 'Continue →' : 'Publish property'}
-        </button>
+
+      {/* Sqft + Plot */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div>
+          <FieldLabel required>Built-up area (sqft)</FieldLabel>
+          <input type="number" min="0" className="pnw-input" value={form.sqft} onChange={e => setField('sqft', e.target.value)} placeholder="e.g. 4200" />
+        </div>
+        <div>
+          <FieldLabel optional>Plot size (sqft)</FieldLabel>
+          <input type="number" min="0" className="pnw-input" value={form.plotSqft} onChange={e => setField('plotSqft', e.target.value)} placeholder="e.g. 8000" />
+        </div>
+      </div>
+
+      {/* Price */}
+      <div style={{ marginBottom: 28 }}>
+        <FieldLabel required>Price (AED)</FieldLabel>
+        <input type="number" min="0" className="pnw-input" value={form.price} onChange={e => setField('price', e.target.value)} placeholder="e.g. 8500000" />
+        <FieldHint>Shown publicly. Use digits only — we format it.</FieldHint>
+      </div>
+
+      <SectionDivider>Top features</SectionDivider>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 8 }}>
+        {(['feature1', 'feature2', 'feature3', 'feature4'] as const).map((k, i) => (
+          <div key={k}>
+            <FieldLabel optional>Feature {i + 1}</FieldLabel>
+            <input className="pnw-input" value={form[k]} onChange={e => setField(k, e.target.value)} placeholder={['Private pool', 'Sea view', 'Upgraded kitchen', 'Vacant on transfer'][i]} />
+          </div>
+        ))}
+      </div>
+      <FieldHint>These feed the AI description in the next step. Think: private pool, sea view, upgraded kitchen, vacant on transfer.</FieldHint>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 32, borderTop: '1px solid var(--line-soft,#f0f2f4)', marginTop: 32 }}>
+        <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to basics</button>
+        <button onClick={onContinue} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff', fontFamily: 'inherit' }}>Continue to description →</button>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEP 3 — AI description
+═══════════════════════════════════════════════════════════════ */
+const TONE_OPTIONS: { id: Tone; icon: string; label: string; desc: string }[] = [
+  { id: 'Refined', icon: '🎩', label: 'Refined', desc: 'Elegant, formal prose for luxury listings' },
+  { id: 'Warm', icon: '☀️', label: 'Warm', desc: 'Friendly, conversational, approachable' },
+  { id: 'Investor', icon: '📊', label: 'Investor', desc: 'Data-driven, ROI-focused, returns-led' },
+]
+
+const MOCK_DESCRIPTIONS: Record<Tone, (f: FormState) => string> = {
+  Refined: f => `Presenting an exceptional ${f.propertyType || 'residence'} in the prestigious ${f.community || 'community'}, this meticulously curated property embodies the pinnacle of refined living. ${f.beds ? `Comprising ${f.beds} generously proportioned bedrooms` : 'Comprising beautifully proportioned bedrooms'} and ${f.baths ? `${f.baths} elegantly appointed bathrooms` : 'elegantly appointed bathrooms'}, the residence is complemented by ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).join(', ') || 'bespoke finishes and curated amenities'} that distinguish it from ordinary offerings. ${f.sqft ? `Spanning ${Number(f.sqft).toLocaleString()} sq ft` : 'Spanning an impressive footprint'}, every space has been thoughtfully designed to deliver an uncompromising lifestyle. An unmissable opportunity for the most discerning of buyers.`,
+  Warm: f => `Welcome home to this wonderful ${f.propertyType || 'property'} in ${f.community || 'a fantastic community'}! With ${f.beds || 'spacious'} bedrooms and ${f.baths || 'beautifully finished'} bathrooms, there's space for everyone to feel right at home. ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).length > 0 ? `You'll love the ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).join(', ')} — ` : ''}${f.sqft ? `all ${Number(f.sqft).toLocaleString()} sq ft of it` : 'every inch of it'} has been cared for and is ready for its next chapter. Whether you're looking for family space or your own retreat, this one just feels right. Come see it for yourself — we'd love to show you around.`,
+  Investor: f => `Strong investment opportunity: ${f.propertyType || 'property'} in ${f.community || 'a high-demand community'}, one of Dubai's most sought-after residential zones with consistent year-on-year capital appreciation. ${f.beds ? `${f.beds}-bedroom` : 'Multi-bedroom'} configuration ${f.sqft ? `across ${Number(f.sqft).toLocaleString()} sq ft` : ''} offers broad rental appeal. ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).length > 0 ? `Key value drivers: ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).join(', ')}.` : ''} ${f.price ? `Listed at AED ${Number(f.price).toLocaleString()}, representing competitive entry pricing` : 'Competitively priced'} for a market where comparable units command premium returns. Ideal for portfolio diversification, buy-to-let, or capital preservation strategy.`,
+}
+
+function Step3Form({ form, setField, onBack, onContinue }: {
+  form: FormState
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  onBack: () => void
+  onContinue: () => void
+}) {
+  const [generating, setGenerating] = useState(false)
+
+  const generate = () => {
+    setGenerating(true)
+    setField('description', '')
+    setTimeout(() => {
+      setGenerating(false)
+      setField('description', MOCK_DESCRIPTIONS[form.tone](form))
+    }, 2000)
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 3 OF 6</div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>AI description</h1>
+      <p style={{ fontSize: 15, color: 'var(--muted,#5a6470)', marginBottom: 36, lineHeight: 1.6, maxWidth: 560 }}>
+        We'll write a unique, search-optimised description based on everything you've entered. Pick a tone, edit freely.
+      </p>
+
+      {/* Tone selector */}
+      <div style={{ marginBottom: 28 }}>
+        <FieldLabel>Tone</FieldLabel>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          {TONE_OPTIONS.map(t => {
+            const sel = form.tone === t.id
+            return (
+              <div key={t.id} onClick={() => setField('tone', t.id)}
+                style={{
+                  padding: '16px 14px', borderRadius: 10, cursor: 'pointer',
+                  border: sel ? '2px solid var(--accent,#2d5a4f)' : '1.5px solid var(--line,#e6e8eb)',
+                  background: sel ? 'var(--accent-soft,#e8f0ed)' : '#fff',
+                  transition: 'all .12s',
+                }}>
+                <div style={{ fontSize: 22, marginBottom: 6 }}>{t.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink,#0f1419)', marginBottom: 3 }}>{t.label}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--muted,#5a6470)', lineHeight: 1.4 }}>{t.desc}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Generate button */}
+      <button onClick={generate} disabled={generating} style={{
+        padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: generating ? 'wait' : 'pointer',
+        border: 'none', background: generating ? 'var(--muted,#5a6470)' : 'var(--accent,#2d5a4f)', color: '#fff',
+        fontFamily: 'inherit', marginBottom: 16, transition: 'background .12s',
+      }}>Generate description ✨</button>
+
+      {/* Loading skeleton */}
+      {generating && (
+        <div style={{ marginBottom: 16 }}>
+          {[100, 90, 95, 70].map((w, i) => (
+            <div key={i} style={{
+              height: 14, borderRadius: 6, background: '#e6e8eb', marginBottom: 8,
+              width: `${w}%`, animation: 'pnw-pulse 1.4s infinite', animationDelay: `${i * 0.15}s`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Textarea */}
+      {!generating && (
+        <div style={{ marginBottom: 16 }}>
+          <textarea
+            className="pnw-input"
+            value={form.description}
+            onChange={e => setField('description', e.target.value)}
+            placeholder="Click 'Generate description' above, or write your own…"
+            style={{ minHeight: 200, resize: 'vertical', lineHeight: 1.7 }}
+          />
+          <FieldHint>This is YOUR description — edit it however you like. Every property gets unique copy, no duplicates.</FieldHint>
+        </div>
+      )}
+
+      {/* Regenerate */}
+      {form.description && !generating && (
+        <button onClick={generate} style={{
+          padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+          border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--muted,#5a6470)',
+          fontFamily: 'inherit', marginBottom: 24,
+        }}>Try a different version</button>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 32, borderTop: '1px solid var(--line-soft,#f0f2f4)', marginTop: 16 }}>
+        <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to specs</button>
+        <button onClick={onContinue} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff', fontFamily: 'inherit' }}>Continue to photos →</button>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEP 4 — Photos
+═══════════════════════════════════════════════════════════════ */
+function Step4Form({ form, setField, onBack, onContinue }: {
+  form: FormState
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  onBack: () => void
+  onContinue: () => void
+}) {
+  const MAX_PHOTOS = 18
+  const photos = form.photos
+
+  const addFiles = (files: FileList | null) => {
+    if (!files) return
+    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
+    const combined = [...photos, ...newFiles].slice(0, MAX_PHOTOS)
+    setField('photos', combined)
+  }
+
+  const removePhoto = (i: number) => {
+    setField('photos', photos.filter((_, idx) => idx !== i))
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 4 OF 6</div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>Photos</h1>
+      <p style={{ fontSize: 15, color: 'var(--muted,#5a6470)', marginBottom: 36, lineHeight: 1.6, maxWidth: 560 }}>
+        The hero photo is the first thing buyers see. Add up to 18 photos — drag to reorder.
+      </p>
+
+      {/* Hero drop zone */}
+      <div style={{ marginBottom: 20 }}>
+        <FieldLabel>Hero photo</FieldLabel>
+        <label style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
+          height: 200, borderRadius: 12, cursor: 'pointer',
+          border: photos[0] ? '2px solid var(--accent,#2d5a4f)' : '2px dashed var(--line,#e6e8eb)',
+          background: photos[0] ? 'transparent' : '#fff',
+          overflow: 'hidden', position: 'relative', transition: 'all .12s',
+        }}>
+          {photos[0] ? (
+            <>
+              <img src={URL.createObjectURL(photos[0])} alt="hero" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+              <div style={{ position: 'relative', zIndex: 1, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{photos[0].name}</div>
+            </>
+          ) : (
+            <>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--quiet,#8b95a0)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <span style={{ fontSize: 13, color: 'var(--muted,#5a6470)' }}>Drop your hero photo here or click to browse</span>
+            </>
+          )}
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => addFiles(e.target.files)} />
+        </label>
+      </div>
+
+      {/* Gallery grid */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <FieldLabel>Gallery</FieldLabel>
+          <span style={{ fontSize: 12, color: 'var(--muted,#5a6470)', fontWeight: 500 }}>{photos.length} / {MAX_PHOTOS} photos</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          {photos.slice(1).map((f, i) => (
+            <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '4/3', background: '#f0f2f4' }}>
+              <img src={URL.createObjectURL(f)} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button onClick={() => removePhoto(i + 1)} style={{
+                position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer',
+                fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+              }}>×</button>
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <label style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+              borderRadius: 8, border: '2px dashed var(--line,#e6e8eb)', cursor: 'pointer',
+              aspectRatio: '4/3', background: '#fff', fontSize: 11, color: 'var(--muted,#5a6470)', transition: 'all .12s',
+            }}>
+              <span style={{ fontSize: 20 }}>+</span>
+              <span>Add photos</span>
+              <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => addFiles(e.target.files)} />
+            </label>
+          )}
+        </div>
+      </div>
+      <FieldHint>Landscape, well-lit photos work best. The hero photo replaces the gradient placeholder on your page.</FieldHint>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 32, borderTop: '1px solid var(--line-soft,#f0f2f4)', marginTop: 24 }}>
+        <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to description</button>
+        <button onClick={onContinue} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff', fontFamily: 'inherit' }}>Continue to URL &amp; options →</button>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEP 5 — URL & options
+═══════════════════════════════════════════════════════════════ */
+function ToggleCard({ label, desc, value, onChange }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div onClick={() => onChange(!value)} style={{
+      display: 'flex', alignItems: 'flex-start', gap: 14, padding: '16px 18px', borderRadius: 10, cursor: 'pointer',
+      border: value ? '2px solid var(--accent,#2d5a4f)' : '1.5px solid var(--line,#e6e8eb)',
+      background: value ? 'var(--accent-soft,#e8f0ed)' : '#fff', marginBottom: 10, transition: 'all .12s',
+    }}>
+      <div style={{
+        width: 40, height: 22, borderRadius: 11, background: value ? 'var(--accent,#2d5a4f)' : 'var(--line,#e6e8eb)',
+        position: 'relative', flexShrink: 0, marginTop: 2, transition: 'background .15s',
+      }}>
+        <div style={{
+          position: 'absolute', top: 3, left: value ? 21 : 3, width: 16, height: 16,
+          borderRadius: '50%', background: '#fff', transition: 'left .15s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        }} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink,#0f1419)', marginBottom: 3 }}>{label}</div>
+        <div style={{ fontSize: 12, color: 'var(--muted,#5a6470)', lineHeight: 1.5 }}>{desc}</div>
+      </div>
+    </div>
+  )
+}
+
+function Step5Form({ form, setField, onBack, onContinue, agentSlug }: {
+  form: FormState
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  onBack: () => void
+  onContinue: () => void
+  agentSlug: string
+}) {
+  const derivedSlug = form.slug || slugify(form.pageTitle) || 'property-title'
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 5 OF 6</div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>URL &amp; options</h1>
+      <p style={{ fontSize: 15, color: 'var(--muted,#5a6470)', marginBottom: 36, lineHeight: 1.6, maxWidth: 560 }}>
+        Choose your page URL, toggle sold pricing data, and configure lead capture.
+      </p>
+
+      <SectionDivider>Page URL</SectionDivider>
+
+      {/* Slug */}
+      <div style={{ marginBottom: 16 }}>
+        <FieldLabel>URL slug</FieldLabel>
+        <div style={{ display: 'flex', alignItems: 'stretch', border: '1px solid var(--line,#e6e8eb)', borderRadius: 9, overflow: 'hidden', background: '#fff' }}>
+          <div style={{ padding: '11px 12px', background: 'var(--paper-warm,#fbfaf7)', fontSize: 13, color: 'var(--muted,#5a6470)', borderRight: '1px solid var(--line,#e6e8eb)', whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            agentpages.io/{agentSlug}/
+          </div>
+          <input
+            style={{ flex: 1, padding: '11px 12px', border: 'none', fontSize: 13, color: 'var(--ink,#0f1419)', fontFamily: 'inherit', outline: 'none', background: 'transparent', minWidth: 0 }}
+            value={form.slug}
+            onChange={e => setField('slug', e.target.value)}
+            placeholder={derivedSlug}
+          />
+        </div>
+        <div style={{ marginTop: 5, fontSize: 12, color: '#15803d', fontWeight: 500 }}>✓ Available</div>
+      </div>
+
+      {/* Custom domain */}
+      <div style={{ marginBottom: 32 }}>
+        <FieldLabel optional>Custom domain</FieldLabel>
+        <input className="pnw-input" value={form.customDomain} onChange={e => setField('customDomain', e.target.value)} placeholder="e.g. 4bedroomvillainmeadows.com" />
+        <FieldHint>Pro plan and above. We handle DNS + SSL.</FieldHint>
+      </div>
+
+      <SectionDivider>Options</SectionDivider>
+
+      <ToggleCard
+        label="Show sold pricing data"
+        desc="Include DLD sold transaction data for this community on your page. Builds buyer trust."
+        value={form.showSoldPricing}
+        onChange={v => setField('showSoldPricing', v)}
+      />
+      <ToggleCard
+        label="Lead capture form"
+        desc="Show the enquiry form on this page. Leads go to your inbox + WhatsApp."
+        value={form.showLeadForm}
+        onChange={v => setField('showLeadForm', v)}
+      />
+      <ToggleCard
+        label="Show on portfolio"
+        desc="Include this property on your public portfolio page."
+        value={form.showOnPortfolio}
+        onChange={v => setField('showOnPortfolio', v)}
+      />
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 32, borderTop: '1px solid var(--line-soft,#f0f2f4)', marginTop: 16 }}>
+        <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to photos</button>
+        <button onClick={onContinue} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff', fontFamily: 'inherit' }}>Review &amp; publish →</button>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEP 6 — Review & publish
+═══════════════════════════════════════════════════════════════ */
+function Step6Form({ form, setField: _setField, onBack, onPublish, onSaveDraft, agentSlug, formattedPrice }: {
+  form: FormState
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  onBack: () => void
+  onPublish: () => void
+  onSaveDraft: () => void
+  agentSlug: string
+  formattedPrice: string
+}) {
+  const effectiveSlug = form.slug || slugify(form.pageTitle) || 'property-title'
+  const pageUrl = form.customDomain ? form.customDomain : `agentpages.io/${agentSlug}/${effectiveSlug}`
+  const truncateDesc = form.description.length > 200 ? form.description.slice(0, 200) + '…' : form.description
+
+  const checks = [
+    { label: 'Property details complete', ok: !!(form.propertyType && form.pageTitle && form.community) },
+    { label: 'Description written', ok: !!form.description },
+    { label: 'Photos uploaded', ok: form.photos.length > 0 },
+    { label: 'URL configured', ok: !!effectiveSlug },
+  ]
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 6 OF 6</div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>Review &amp; publish</h1>
+      <p style={{ fontSize: 15, color: 'var(--muted,#5a6470)', marginBottom: 36, lineHeight: 1.6, maxWidth: 560 }}>
+        Everything looks good? Hit publish and your page goes live instantly.
+      </p>
+
+      {/* Summary card */}
+      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid var(--line-soft,#f0f2f4)', padding: '24px', marginBottom: 24, boxShadow: '0 2px 8px rgba(15,20,25,0.04)' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {form.propertyType && <span style={{ padding: '3px 10px', background: 'var(--accent-soft,#e8f0ed)', color: 'var(--accent,#2d5a4f)', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{form.propertyType}</span>}
+          {form.purpose && <span style={{ padding: '3px 10px', background: form.purpose === 'For sale' ? '#dbeafe' : '#fef3c7', color: form.purpose === 'For sale' ? '#1d4ed8' : '#92400e', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{form.purpose}</span>}
+        </div>
+        <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 22, fontWeight: 400, color: 'var(--ink,#0f1419)', marginBottom: 6, lineHeight: 1.25 }}>
+          {form.pageTitle || <em style={{ color: 'var(--quiet,#8b95a0)' }}>No title yet</em>}
+        </div>
+        {form.community && (
+          <div style={{ fontSize: 13, color: 'var(--muted,#5a6470)', marginBottom: 14 }}>
+            {[form.community, form.subCommunity, form.tower].filter(Boolean).join(', ')}
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14, flexWrap: 'wrap' as const }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink,#0f1419)' }}>{formattedPrice}</span>
+          {form.beds && <span style={{ fontSize: 13, color: 'var(--muted,#5a6470)' }}>{form.beds} bed</span>}
+          {form.baths && <span style={{ fontSize: 13, color: 'var(--muted,#5a6470)' }}>{form.baths} bath</span>}
+          {form.sqft && <span style={{ fontSize: 13, color: 'var(--muted,#5a6470)' }}>{Number(form.sqft).toLocaleString()} sqft</span>}
+        </div>
+        {form.description && (
+          <div style={{ fontSize: 13, color: 'var(--muted,#5a6470)', lineHeight: 1.6, marginBottom: 14, padding: '12px 14px', background: 'var(--paper-warm,#fbfaf7)', borderRadius: 8 }}>
+            {truncateDesc}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 20, fontSize: 12, color: 'var(--muted,#5a6470)' }}>
+          <span>📸 {form.photos.length} photo{form.photos.length !== 1 ? 's' : ''}</span>
+          <span>🔗 {pageUrl}</span>
+        </div>
+      </div>
+
+      {/* Checklist */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--line-soft,#f0f2f4)', padding: '18px 20px', marginBottom: 28 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--quiet,#8b95a0)', letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 12 }}>CHECKLIST</div>
+        {checks.map((c, i) => (
+          <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: i < checks.length - 1 ? '1px solid var(--line-soft,#f0f2f4)' : 'none' }}>
+            <span style={{ fontSize: 15 }}>{c.ok ? '✅' : '❌'}</span>
+            <span style={{ fontSize: 13, color: c.ok ? 'var(--ink,#0f1419)' : 'var(--muted,#5a6470)' }}>{c.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Publish */}
+      <button onClick={onPublish} style={{
+        width: '100%', padding: '14px 24px', borderRadius: 10, fontSize: 15, fontWeight: 700,
+        cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff',
+        fontFamily: 'inherit', marginBottom: 10,
+      }}>Publish property page →</button>
+      <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--quiet,#8b95a0)', marginBottom: 16, lineHeight: 1.5 }}>
+        Your page will be live immediately and submitted to Google, ChatGPT, Claude, Gemini, Perplexity, and Copilot for indexing.
+      </div>
+
+      <button onClick={onSaveDraft} style={{
+        width: '100%', padding: '11px 24px', borderRadius: 10, fontSize: 14, fontWeight: 500,
+        cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent',
+        color: 'var(--ink,#0f1419)', fontFamily: 'inherit', marginBottom: 28,
+      }}>Save as draft</button>
+
+      <div style={{ paddingTop: 8, borderTop: '1px solid var(--line-soft,#f0f2f4)' }}>
+        <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to URL &amp; options</button>
       </div>
     </div>
   )
