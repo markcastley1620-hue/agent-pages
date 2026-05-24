@@ -10,6 +10,7 @@ import PropertyEdit from './pages/PropertyEdit'
 import PortfolioEdit from './pages/PortfolioEdit'
 import Leads from './pages/Leads'
 import Settings from './pages/Settings'
+import Onboarding from './pages/Onboarding'
 import PublicPortfolio from './pages/PublicPortfolio'
 import PublicProperty from './pages/PublicProperty'
 import Home from './pages/Home'
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/portfolio/edit" element={<ProtectedRoute><PortfolioEdit /></ProtectedRoute>} />
         <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
         {/* Default */}
         <Route path="/" element={<Home />} />
