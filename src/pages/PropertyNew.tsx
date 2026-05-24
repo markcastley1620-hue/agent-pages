@@ -578,7 +578,7 @@ export default function PropertyNew() {
                 {form.showSoldPricing && form.community && (
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--quiet,#8b95a0)', fontWeight: 600, marginBottom: 6 }}>RECENT TRANSACTIONS</div>
-                    {MOCK_TRANSACTIONS.filter(t => t.checked).slice(0, 3).map((t, i) => (
+                    {getMockTransactions(form).filter(t => t.checked).slice(0, 3).map((t, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--line-soft,#f0f2f4)' }}>
                         <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink,#0f1419)' }}>{t.label}</div>
                         <div style={{ fontSize: 9.5, color: 'var(--muted,#5a6470)' }}>{t.sub}</div>
@@ -635,15 +635,34 @@ export default function PropertyNew() {
   )
 }
 
-/* ── Mock transactions data ── */
-const MOCK_TRANSACTIONS = [
-  { label: '3BR Villa · AED 4,200,000', sub: '14 days ago · 3,200 sqft', checked: true },
-  { label: '4BR Villa · AED 5,800,000', sub: '21 days ago · 4,100 sqft', checked: true },
-  { label: '3BR Villa · AED 3,950,000', sub: '1 month ago · 3,050 sqft', checked: true },
-  { label: '5BR Villa · AED 7,200,000', sub: '2 months ago · 5,500 sqft', checked: false },
-  { label: '3BR Villa · AED 4,100,000', sub: '2 months ago · 3,200 sqft', checked: false },
-  { label: '4BR Villa · AED 5,500,000', sub: '3 months ago · 3,900 sqft', checked: false },
-]
+/* ── Generate context-aware mock transactions based on property type + location ── */
+function getMockTransactions(form: FormState) {
+  const type = form.propertyType || 'Unit'
+  const beds = form.beds ? parseInt(form.beds) : 2
+  const basePrice = form.price ? parseInt(form.price.replace(/,/g, '')) : 3000000
+
+  // Generate 6 plausible transactions matching the property type
+  const variations = [
+    { bedDelta: 0, priceMult: 0.95, age: '14 days ago', sqft: 1200 },
+    { bedDelta: 1, priceMult: 1.15, age: '21 days ago', sqft: 1500 },
+    { bedDelta: 0, priceMult: 0.88, age: '1 month ago', sqft: 1100 },
+    { bedDelta: -1, priceMult: 0.72, age: '2 months ago', sqft: 900 },
+    { bedDelta: 0, priceMult: 1.02, age: '2 months ago', sqft: 1250 },
+    { bedDelta: 1, priceMult: 1.25, age: '3 months ago', sqft: 1600 },
+  ]
+
+  return variations.map((v, i) => {
+    const txnBeds = Math.max(0, beds + v.bedDelta)
+    const txnPrice = Math.round((basePrice * v.priceMult) / 1000) * 1000
+    const bedLabel = txnBeds === 0 ? 'Studio' : `${txnBeds}BR`
+    const sqft = type === 'Villa' || type === 'Townhouse' ? v.sqft + 1500 : v.sqft
+    return {
+      label: `${bedLabel} ${type} · AED ${txnPrice.toLocaleString()}`,
+      sub: `${v.age} · ${sqft.toLocaleString()} sqft`,
+      checked: i < 3,
+    }
+  })
+}
 
 /* ═══════════════════════════════════════════════════════════════
    STEP 1 — The basics
@@ -1117,7 +1136,8 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibility
   onVisibilityChange: (cfg: Record<string, boolean>) => void
 }) {
   const derivedSlug = form.slug || slugify(form.pageTitle) || 'property-title'
-  const [txnChecked, setTxnChecked] = useState(MOCK_TRANSACTIONS.map(t => t.checked))
+  const transactions = getMockTransactions(form)
+  const [txnChecked, setTxnChecked] = useState(transactions.map(t => t.checked))
 
   return (
     <div>
@@ -1172,19 +1192,19 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibility
           padding: 14, marginBottom: 10, marginTop: -4,
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink,#0f1419)', marginBottom: 4 }}>
-            Community transactions{form.community ? ` for ${form.community}` : ''}
+            Sold transactions{form.tower ? ` in ${form.tower}` : form.subCommunity ? ` in ${form.subCommunity}` : form.community ? ` in ${form.community}` : ''}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--muted,#5a6470)', marginBottom: 12 }}>
             Select which transactions appear on your page
           </div>
-          {MOCK_TRANSACTIONS.map((t, i) => (
+          {transactions.map((t, i) => (
             <div key={i} onClick={() => {
               const next = [...txnChecked]
               next[i] = !next[i]
               setTxnChecked(next)
             }} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
-              borderBottom: i < MOCK_TRANSACTIONS.length - 1 ? '1px solid var(--line-soft,#f0f2f4)' : 'none',
+              borderBottom: i < transactions.length - 1 ? '1px solid var(--line-soft,#f0f2f4)' : 'none',
               cursor: 'pointer',
             }}>
               {/* Custom checkbox */}
