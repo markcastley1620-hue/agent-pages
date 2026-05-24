@@ -6,7 +6,7 @@ const KPI_CARDS = [
   { key: 'views',      label: 'Total page views',  value: '0',     change: '—', period: '', icon: 'views',   iconBg: '#d1fae5', iconColor: '#059669' },
   { key: 'leads',      label: 'Leads captured',    value: '0',     change: '—', period: '', icon: 'leads',   iconBg: '#dbeafe', iconColor: '#2563eb' },
   { key: 'time',       label: 'Avg time on page',  value: '0:00',  change: '—', period: '', icon: 'time',    iconBg: '#fef3c7', iconColor: '#d97706' },
-  { key: 'conversion', label: 'Conversion rate',   value: '0.0%',  change: '—', period: '', icon: 'conv',    iconBg: '#fff7ed', iconColor: '#ea580c' },
+  { key: 'conversion', label: 'Lead → viewing rate', value: '0%',    change: '—', period: '', icon: 'conv',    iconBg: '#fff7ed', iconColor: '#ea580c' },
 ]
 
 const CHART_DAYS = ['May 1','May 5','May 10','May 15','May 20','May 25','May 30']

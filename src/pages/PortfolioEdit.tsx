@@ -65,6 +65,21 @@ export default function PortfolioEdit() {
   const [specialismInput, setSpecialismInput] = useState('')
   const [languageInput, setLanguageInput] = useState('')
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [saving, setSaving] = useState(false)
+
+  async function handlePublish() {
+    if (!user || saving) return
+    setSaving(true)
+    await supabase.from('profiles').upsert({ id: user.id, ...profile })
+    setSaving(false)
+  }
+
+  useEffect(() => {
+    const handler = () => handlePublish()
+    window.addEventListener('portfolio:publish', handler)
+    return () => window.removeEventListener('portfolio:publish', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, user])
 
   useEffect(() => {
     if (!user) return

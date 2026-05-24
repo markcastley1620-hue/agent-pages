@@ -68,7 +68,25 @@ export default function App() {
 
         <Route path="/portfolio/edit" element={
           <ProtectedRoute>
-            <AppShell activeNav="portfolio" variant="breadcrumb" breadcrumb={{ parent: 'Portfolio', parentHref: '/portfolio/edit', current: 'Edit' }}>
+            <AppShell
+              activeNav="portfolio"
+              variant="breadcrumb"
+              breadcrumb={{ parent: 'Portfolio', parentHref: '/portfolio/edit', current: 'Edit' }}
+              rightActions={
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('portfolio:publish'))}
+                  style={{
+                    padding: '7px 14px', background: 'var(--accent, #2d5a4f)', color: '#fff',
+                    border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover, #234a40)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent, #2d5a4f)'}
+                >
+                  Publish changes
+                </button>
+              }
+            >
               <PortfolioEdit />
             </AppShell>
           </ProtectedRoute>

@@ -326,7 +326,7 @@ function ActiveState({ firstName }: {
     { label: 'New leads',       value: 0,      icon: Users,     iconBg: '#d1fae5', iconColor: '#059669', trend: '—', footer: 'vs. yesterday' },
     { label: 'Page views',      value: 0,      icon: Eye,       iconBg: '#dbeafe', iconColor: '#2563eb', trend: '—', footer: 'last 7 days' },
     { label: 'Viewings booked', value: 0,      icon: Calendar,  iconBg: '#fef3c7', iconColor: '#d97706', trend: '—', footer: 'this week' },
-    { label: 'Lead conversion', value: '0.0%', icon: Percent,   iconBg: '#fff7ed', iconColor: '#ea580c', trend: '—', footer: 'vs. last month' },
+    { label: 'Lead → viewing', value: '0%', icon: Percent,   iconBg: '#fff7ed', iconColor: '#ea580c', trend: '—', footer: 'vs. last month' },
   ]
 
   const maxViewVal = 120
@@ -429,7 +429,7 @@ function ActiveState({ firstName }: {
                 {[
                   { label: 'Views', value: '0', color: '#2563eb' },
                   { label: 'Leads', value: '0',   color: '#2d5a4f' },
-                  { label: 'Conversion', value: '0.0%', color: '#d97706' },
+                  { label: 'Lead → viewing', value: '0%', color: '#d97706' },
                 ].map(s => (
                   <div key={s.label}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#0f1419', letterSpacing: '-0.3px' }}>{s.value}</div>

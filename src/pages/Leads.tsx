@@ -54,14 +54,6 @@ const COUNTRY_CODES = [
 
 const BUYER_TYPES = ['Cash', 'Mortgage', 'Investor', 'Browsing', 'Tenant']
 
-const BUDGET_OPTIONS = [
-  'Not sure yet',
-  'Under AED 2M',
-  'AED 2–5M',
-  'AED 5–10M',
-  'AED 10–20M',
-  'AED 20M+',
-]
 
 const TIMELINE_OPTIONS = [
   'Just exploring',
@@ -133,7 +125,10 @@ interface DrawerState {
   email: string
   buyerType: string
   propertyId: string | null
-  budget: string
+  budgetMin: string
+  budgetMax: string
+  bedsMin: number | null
+  bedsMax: number | null
   timeline: string
   status: string
   note: string
@@ -149,7 +144,10 @@ const defaultDrawer = (): DrawerState => ({
   email: '',
   buyerType: '',
   propertyId: null,
-  budget: '',
+  budgetMin: '',
+  budgetMax: '',
+  bedsMin: null,
+  bedsMax: null,
   timeline: '',
   status: 'new',
   note: '',
@@ -223,7 +221,10 @@ function AddLeadDrawer({ open, onClose, onSaved, userId, properties }: AddLeadDr
       email: form.email.trim() || null,
       buyer_type: form.buyerType || null,
       property_id: form.propertyId || null,
-      budget_range: form.budget || null,
+      budget_min: form.budgetMin ? parseInt(form.budgetMin.replace(/,/g, ''), 10) || null : null,
+      budget_max: form.budgetMax ? parseInt(form.budgetMax.replace(/,/g, ''), 10) || null : null,
+      beds_min: form.bedsMin,
+      beds_max: form.bedsMax,
       timeline: form.timeline || null,
       status: form.status,
       note: form.note.trim() || null,
@@ -446,18 +447,97 @@ function AddLeadDrawer({ open, onClose, onSaved, userId, properties }: AddLeadDr
                 </div>
               </div>
 
-              <div className="drawer-row">
-                <div className="drawer-field">
-                  <label className="drawer-label">Budget range</label>
-                  <select
-                    className="drawer-select"
-                    value={form.budget}
-                    onChange={e => set('budget', e.target.value)}
-                  >
-                    <option value="">Select...</option>
-                    {BUDGET_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
+              {/* Budget range */}
+              <div className="drawer-field">
+                <label className="drawer-label">Budget range</label>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <input
+                    className="drawer-input"
+                    placeholder="AED min"
+                    value={form.budgetMin}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/,/g, '').replace(/[^0-9]/g, '')
+                      set('budgetMin', raw ? Number(raw).toLocaleString() : '')
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <input
+                    className="drawer-input"
+                    placeholder="AED max"
+                    value={form.budgetMax}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/,/g, '').replace(/[^0-9]/g, '')
+                      set('budgetMax', raw ? Number(raw).toLocaleString() : '')
+                    }}
+                    style={{ flex: 1 }}
+                  />
                 </div>
+                {/* Dual range slider */}
+                <div style={{ position: 'relative', height: 28, display: 'flex', alignItems: 'center', gap: 0 }}>
+                  <style>{`
+                    .budget-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px; background: var(--line, #e6e8eb); outline: none; position: absolute; pointer-events: none; }
+                    .budget-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent, #2d5a4f); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; pointer-events: all; }
+                    .budget-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent, #2d5a4f); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; pointer-events: all; }
+                  `}</style>
+                  <input
+                    type="range" className="budget-slider"
+                    min={500000} max={50000000} step={100000}
+                    value={form.budgetMin ? parseInt(form.budgetMin.replace(/,/g,''),10) || 500000 : 500000}
+                    onChange={e => {
+                      const v = Number(e.target.value)
+                      set('budgetMin', v === 500000 ? '' : v.toLocaleString())
+                    }}
+                  />
+                  <input
+                    type="range" className="budget-slider"
+                    min={500000} max={50000000} step={100000}
+                    value={form.budgetMax ? parseInt(form.budgetMax.replace(/,/g,''),10) || 50000000 : 50000000}
+                    onChange={e => {
+                      const v = Number(e.target.value)
+                      set('budgetMax', v === 50000000 ? '' : v.toLocaleString())
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Bedroom range */}
+              <div className="drawer-field">
+                <label className="drawer-label">Bedrooms</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {[null, 'Studio', 1, 2, 3, 4, 5, '6+'].map((bed, idx) => {
+                    const isAny = bed === null
+                    const bedNum = isAny ? null : bed === 'Studio' ? 0 : bed === '6+' ? 6 : bed as number
+                    let isSelected = false
+                    if (isAny) isSelected = form.bedsMin === null && form.bedsMax === null
+                    else isSelected = form.bedsMin !== null && bedNum !== null && bedNum >= (form.bedsMin ?? 0) && bedNum <= (form.bedsMax ?? form.bedsMin ?? bedNum)
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          if (isAny) { set('bedsMin', null); set('bedsMax', null); return }
+                          if (form.bedsMin === null) { set('bedsMin', bedNum); set('bedsMax', bedNum) }
+                          else if (bedNum === form.bedsMin && bedNum === form.bedsMax) { set('bedsMin', null); set('bedsMax', null) }
+                          else if (bedNum !== null && bedNum < (form.bedsMin ?? 0)) { set('bedsMin', bedNum) }
+                          else if (bedNum !== null) { set('bedsMax', bedNum) }
+                        }}
+                        style={{
+                          minHeight: 36, padding: '8px 16px', borderRadius: 100,
+                          border: `1.5px solid ${isSelected ? 'var(--accent, #2d5a4f)' : 'var(--line, #e6e8eb)'}`,
+                          background: isSelected ? 'var(--accent-soft, #e8f0ed)' : '#fff',
+                          color: isSelected ? 'var(--accent, #2d5a4f)' : 'var(--ink, #0f1419)',
+                          fontSize: 13, fontWeight: isSelected ? 600 : 400,
+                          cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
+                        }}
+                      >
+                        {isAny ? 'Any' : String(bed)}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="drawer-row">
                 <div className="drawer-field">
                   <label className="drawer-label">Timeline</label>
                   <select
@@ -713,9 +793,9 @@ export default function Leads() {
           <div className="kpi-card">
             <div className="kpi-label">
               <svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
-              Conversion rate
+              Lead → viewing rate
             </div>
-            <div className="kpi-val">0.0%</div>
+            <div className="kpi-val">0%</div>
             <div className="kpi-delta muted">—</div>
           </div>
         </div>
