@@ -44,9 +44,7 @@ export default function App() {
 
         <Route path="/properties/new" element={
           <ProtectedRoute>
-            <AppShell activeNav="properties" variant="breadcrumb" breadcrumb={{ parent: 'Properties', parentHref: '/properties', current: 'Add new property' }}>
-              <PropertyNew />
-            </AppShell>
+            <PropertyNew />
           </ProtectedRoute>
         } />
 

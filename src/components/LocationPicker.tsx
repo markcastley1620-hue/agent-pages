@@ -74,6 +74,8 @@ function search(
 ): LocationEntry[] {
   const q = query.toLowerCase().trim()
   if (!q) return []
+  // Strip leading "the " so "lakes" finds "The Lakes" and vice versa
+  const qNoThe = q.startsWith('the ') ? q.slice(4) : q
 
   const filtered = filterTypes
     ? entries.filter(e => filterTypes.includes(e.t))
@@ -90,18 +92,19 @@ function search(
     if (seen.has(key)) continue
 
     const name = entry.n.toLowerCase()
+    const nameNoThe = name.startsWith('the ') ? name.slice(4) : name
     const hier = entry.h.toLowerCase()
 
-    if (name === q) {
+    if (name === q || nameNoThe === qNoThe) {
       exact.push(entry)
       seen.add(key)
-    } else if (name.startsWith(q)) {
+    } else if (name.startsWith(q) || nameNoThe.startsWith(qNoThe)) {
       startsWith.push(entry)
       seen.add(key)
-    } else if (name.includes(q)) {
+    } else if (name.includes(q) || nameNoThe.includes(qNoThe)) {
       contains.push(entry)
       seen.add(key)
-    } else if (hier.includes(q)) {
+    } else if (hier.includes(q) || hier.includes(qNoThe)) {
       hierarchyMatch.push(entry)
       seen.add(key)
     }
