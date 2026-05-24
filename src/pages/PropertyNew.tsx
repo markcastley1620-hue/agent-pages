@@ -327,27 +327,27 @@ export default function PropertyNew() {
                 agentSlug={agentSlug}
                 formattedPrice={formattedPrice}
                 onPublish={async () => {
-                  if (!user) return
-                  await supabase.from('properties').upsert({
-                    user_id: user.id,
+                  if (!user) { alert('You must be logged in to publish'); return }
+                  const payload = {
+                    agent_id: user.id,
                     property_type: form.propertyType,
                     listing_purpose: form.purpose,
                     community: form.community,
                     sub_community: form.subCommunity,
                     tower: form.tower,
-                    address: form.addressInternal,
+                    address_line: form.addressInternal,
                     title: form.pageTitle,
-                    beds: form.beds ? Number(form.beds) : null,
-                    baths: form.baths ? Number(form.baths) : null,
-                    sqft: form.sqft ? Number(form.sqft) : null,
+                    bedrooms: form.beds ? Number(form.beds) : null,
+                    bathrooms: form.baths ? Number(form.baths) : null,
+                    built_up_sqft: form.sqft ? Number(form.sqft) : null,
                     plot_sqft: form.plotSqft ? Number(form.plotSqft) : null,
-                    price: form.price ? Number(form.price) : null,
-                    features: [form.feature1, form.feature2, form.feature3, form.feature4].filter(Boolean),
-                    description: form.description,
+                    asking_price_aed: form.price ? Number(form.price.replace(/,/g, '')) : null,
+                    feature_highlights: [form.feature1, form.feature2, form.feature3, form.feature4].filter(Boolean),
+                    description_full: form.description,
                     description_tone: form.tone,
                     slug: form.slug || slugify(form.pageTitle),
                     custom_domain: form.customDomain || null,
-                    show_sold_pricing: form.showSoldPricing,
+                    show_community_pricing: form.showSoldPricing,
                     show_lead_form: form.showLeadForm,
                     show_on_portfolio: form.showOnPortfolio,
                     visibility_config: form.visibilityConfig,
@@ -357,13 +357,22 @@ export default function PropertyNew() {
                     location_display: form.locationDisplay || null,
                     location_exact: form.locationExact,
                     status: 'published',
-                  })
+                    published_at: new Date().toISOString(),
+                  }
+                  console.log('Publishing property:', payload)
+                  const { data, error } = await supabase.from('properties').insert(payload).select()
+                  if (error) {
+                    console.error('Publish failed:', error)
+                    alert(`Publish failed: ${error.message}\n\nThis usually means the properties table needs columns added. Check the console for details.`)
+                    return
+                  }
+                  console.log('Published successfully:', data)
                   navigate('/properties')
                 }}
                 onSaveDraft={async () => {
                   if (!user) return
-                  await supabase.from('properties').upsert({
-                    user_id: user.id,
+                  const { error } = await supabase.from('properties').insert({
+                    agent_id: user.id,
                     title: form.pageTitle,
                     slug: form.slug || slugify(form.pageTitle),
                     status: 'draft',
@@ -371,17 +380,22 @@ export default function PropertyNew() {
                     listing_purpose: form.purpose,
                     community: form.community,
                     sub_community: form.subCommunity,
-                    beds: form.beds ? Number(form.beds) : null,
-                    baths: form.baths ? Number(form.baths) : null,
-                    sqft: form.sqft ? Number(form.sqft) : null,
-                    price: form.price ? Number(form.price) : null,
-                    description: form.description,
+                    bedrooms: form.beds ? Number(form.beds) : null,
+                    bathrooms: form.baths ? Number(form.baths) : null,
+                    built_up_sqft: form.sqft ? Number(form.sqft) : null,
+                    asking_price_aed: form.price ? Number(form.price.replace?.(/,/g, '')) : null,
+                    description_full: form.description,
                     lat: form.lat ? parseFloat(form.lat) : null,
                     lng: form.lng ? parseFloat(form.lng) : null,
                     place_id: form.placeId || null,
                     location_display: form.locationDisplay || null,
                     location_exact: form.locationExact,
                   })
+                  if (error) {
+                    console.error('Save draft failed:', error)
+                    alert(`Save failed: ${error.message}`)
+                    return
+                  }
                   navigate('/properties')
                 }}
               />
