@@ -656,13 +656,6 @@ function Step1Form({ form, setField, onContinue }: {
         Watch the live preview on the right update as you fill in details — your property page builds in real time.
       </p>
 
-      {/* Page title — moved to top of step 1 */}
-      <div style={{ marginBottom: 28 }}>
-        <FieldLabel required>Page title</FieldLabel>
-        <input className="pnw-input" value={form.pageTitle} onChange={e => setField('pageTitle', e.target.value)} placeholder="e.g. Stunning 3BR Villa with Pool in Emirates Hills" />
-        <FieldHint>Be descriptive — this becomes your headline and URL slug</FieldHint>
-      </div>
-
       {/* Property type — compact horizontal cards */}
       <div style={{ marginBottom: 28 }}>
         <FieldLabel required>Property type</FieldLabel>
@@ -871,6 +864,12 @@ const TONE_OPTIONS: { id: Tone; label: string; desc: string; icon: React.ReactNo
   },
 ]
 
+const MOCK_TITLES: Record<Tone, (f: FormState) => string> = {
+  Refined: f => `${f.beds ? f.beds + '-bedroom ' : ''}${(f.propertyType || 'residence').toLowerCase()} ${f.feature1 ? 'with ' + f.feature1.toLowerCase() : ''} in ${f.subCommunity || f.community || 'prime location'}`.replace(/\s+/g, ' ').trim(),
+  Warm: f => `Beautiful ${f.beds ? f.beds + '-bed ' : ''}${(f.propertyType || 'home').toLowerCase()} ${f.feature1 ? 'with ' + f.feature1.toLowerCase() : ''} in ${f.community || 'a wonderful community'}`.replace(/\s+/g, ' ').trim(),
+  Investor: f => `High-yield ${f.beds ? f.beds + 'BR ' : ''}${(f.propertyType || 'unit').toLowerCase()} in ${f.community || 'prime location'} — ${f.purpose || 'for sale'}`.replace(/\s+/g, ' ').trim(),
+}
+
 const MOCK_DESCRIPTIONS: Record<Tone, (f: FormState) => string> = {
   Refined: f => `Presenting an exceptional ${f.propertyType || 'residence'} in the prestigious ${f.community || 'community'}, this meticulously curated property embodies the pinnacle of refined living. ${f.beds ? `Comprising ${f.beds} generously proportioned bedrooms` : 'Comprising beautifully proportioned bedrooms'} and ${f.baths ? `${f.baths} elegantly appointed bathrooms` : 'elegantly appointed bathrooms'}, the residence is complemented by ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).join(', ') || 'bespoke finishes and curated amenities'} that distinguish it from ordinary offerings. ${f.sqft ? `Spanning ${Number(f.sqft).toLocaleString()} sq ft` : 'Spanning an impressive footprint'}, every space has been thoughtfully designed to deliver an uncompromising lifestyle. An unmissable opportunity for the most discerning of buyers.`,
   Warm: f => `Welcome home to this wonderful ${f.propertyType || 'property'} in ${f.community || 'a fantastic community'}! With ${f.beds || 'spacious'} bedrooms and ${f.baths || 'beautifully finished'} bathrooms, there's space for everyone to feel right at home. ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).length > 0 ? `You'll love the ${[f.feature1, f.feature2, f.feature3, f.feature4].filter(Boolean).join(', ')} — ` : ''}${f.sqft ? `all ${Number(f.sqft).toLocaleString()} sq ft of it` : 'every inch of it'} has been cared for and is ready for its next chapter. Whether you're looking for family space or your own retreat, this one just feels right. Come see it for yourself — we'd love to show you around.`,
@@ -890,6 +889,7 @@ function Step3Form({ form, setField, onBack, onContinue }: {
     setField('description', '')
     setTimeout(() => {
       setGenerating(false)
+      if (!form.pageTitle) setField('pageTitle', MOCK_TITLES[form.tone](form))
       setField('description', MOCK_DESCRIPTIONS[form.tone](form))
     }, 2000)
   }
@@ -899,8 +899,15 @@ function Step3Form({ form, setField, onBack, onContinue }: {
       <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 3 OF 6</div>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>AI description</h1>
       <p style={{ fontSize: 14, color: 'var(--muted,#5a6470)', marginBottom: 28, lineHeight: 1.6 }}>
-        We'll write a unique, search-optimised description based on everything you've entered. Pick a tone, edit freely.
+        We'll write a unique ad title and search-optimised description based on everything you've entered. Pick a tone, generate, then edit freely.
       </p>
+
+      {/* Ad title — lives on Step 3 */}
+      <div style={{ marginBottom: 18 }}>
+        <FieldLabel required>Ad title</FieldLabel>
+        <input className="pnw-input" value={form.pageTitle} onChange={e => setField('pageTitle', e.target.value)} placeholder="e.g. Stunning 3BR Villa with Pool in Emirates Hills" />
+        <FieldHint>This becomes your page headline and URL slug. Click Generate below to auto-fill from your property data.</FieldHint>
+      </div>
 
       <div style={{ marginBottom: 28 }}>
         <FieldLabel>Tone</FieldLabel>
@@ -929,7 +936,7 @@ function Step3Form({ form, setField, onBack, onContinue }: {
         padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: generating ? 'wait' : 'pointer',
         border: 'none', background: generating ? 'var(--muted,#5a6470)' : 'var(--accent,#2d5a4f)', color: '#fff',
         fontFamily: 'inherit', marginBottom: 16, transition: 'background .12s',
-      }}>Generate description</button>
+      }}>Generate title & description</button>
 
       {generating && (
         <div style={{ marginBottom: 16 }}>
