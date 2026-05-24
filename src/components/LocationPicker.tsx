@@ -36,12 +36,24 @@ function loadLocations(): Promise<LocationEntry[]> {
   }
   _loading = true
   return fetch('/locations.json')
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok) throw new Error(`Failed to load locations: ${r.status}`)
+      return r.json()
+    })
     .then(data => {
-      _cache = data
+      if (!Array.isArray(data)) throw new Error('locations.json is not an array')
+      _cache = data.filter((d: LocationEntry) => d && d.n && d.h)
       _listeners.forEach(fn => fn())
       _listeners.length = 0
-      return data
+      return _cache!
+    })
+    .catch(err => {
+      console.error('Failed to load locations:', err)
+      _loading = false
+      _cache = []
+      _listeners.forEach(fn => fn())
+      _listeners.length = 0
+      return []
     })
 }
 
@@ -140,17 +152,25 @@ export default function LocationPicker({
     })
   }, [])
 
-  /* Search on query change */
+  /* Search on query change — debounced to prevent crash on fast typing */
   useEffect(() => {
     if (!entries || query.length < 2) {
       setResults([])
-      setOpen(query.length >= 2)
+      if (query.length < 2) setOpen(false)
       return
     }
-    const found = search(entries, query, filterTypes)
-    setResults(found)
-    setOpen(true)
-    setHighlightIdx(0)
+    const timer = setTimeout(() => {
+      try {
+        const found = search(entries, query, filterTypes)
+        setResults(found)
+        setOpen(true)
+        setHighlightIdx(0)
+      } catch (err) {
+        console.error('LocationPicker search error:', err)
+        setResults([])
+      }
+    }, 100)
+    return () => clearTimeout(timer)
   }, [query, entries, filterTypes])
 
   /* Close dropdown on outside click */

@@ -652,7 +652,7 @@ function Step1Form({ form, setField, onContinue }: {
       <div style={{ marginBottom: 16 }}>
         <FieldLabel required>Community / Area / Tower</FieldLabel>
         <LocationPicker
-          value={form.community ? { name: form.community, hierarchy: [form.community, form.subCommunity, form.tower].filter(Boolean).join('>'), type: 'N' } : null}
+          value={form.community ? { name: form.tower || form.subCommunity || form.community, hierarchy: [form.community, form.subCommunity, form.tower].filter(Boolean).join('>'), type: form.tower ? 'B' : form.subCommunity ? 'C' : 'N' } : null}
           onChange={(loc: LocationValue | null) => {
             if (!loc) {
               setField('community', '')
