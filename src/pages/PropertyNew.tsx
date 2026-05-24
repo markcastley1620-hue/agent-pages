@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import AppShell from '../components/AppShell'
+import LocationPicker, { type LocationValue } from '../components/LocationPicker'
 
 /* ── helpers ── */
 function slugify(s: string) {
@@ -649,20 +650,27 @@ function Step1Form({ form, setField, onContinue }: {
       <SectionDivider>Location</SectionDivider>
 
       <div style={{ marginBottom: 16 }}>
-        <FieldLabel required>Community</FieldLabel>
-        <input className="pnw-input" value={form.community} onChange={e => setField('community', e.target.value)} placeholder="e.g. Dubai Marina, Downtown Dubai…" />
-        <FieldHint>Start typing — suggestions coming soon</FieldHint>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-        <div>
-          <FieldLabel optional>Sub-community</FieldLabel>
-          <input className="pnw-input" value={form.subCommunity} onChange={e => setField('subCommunity', e.target.value)} placeholder="e.g. Meadows 5" />
-        </div>
-        <div>
-          <FieldLabel optional>Tower / Building</FieldLabel>
-          <input className="pnw-input" value={form.tower} onChange={e => setField('tower', e.target.value)} placeholder="e.g. Burj Views A" />
-        </div>
+        <FieldLabel required>Community / Area / Tower</FieldLabel>
+        <LocationPicker
+          value={form.community ? { name: form.community, hierarchy: [form.community, form.subCommunity, form.tower].filter(Boolean).join('>'), type: 'N' } : null}
+          onChange={(loc: LocationValue | null) => {
+            if (!loc) {
+              setField('community', '')
+              setField('subCommunity', '')
+              setField('tower', '')
+            } else {
+              const parts = loc.hierarchy.split('>')
+              // hierarchy: Emirate > Community > SubCommunity > Building
+              // parts[0] is usually Emirate, rest are location levels
+              const locParts = parts.filter(p => !['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain'].includes(p))
+              setField('community', locParts[0] || loc.name)
+              setField('subCommunity', locParts[1] || '')
+              setField('tower', locParts[2] || '')
+            }
+          }}
+          required
+        />
+        <FieldHint>Search 15,000+ Dubai communities, sub-communities, and buildings</FieldHint>
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -1188,148 +1196,49 @@ function Step6Form({ form, setField: _setField, onBack, onPublish, onSaveDraft, 
   )
 }
 
-/* ══════════════════════════════════════════════════════════════
-   MAP LOCATION PICKER
-══════════════════════════════════════════════════════════════ */
+/* ── MapLocationPicker ── */
 function MapLocationPicker({ lat, lng, locationDisplay, locationExact, community, setField }: {
-  lat: string; lng: string; locationDisplay: string; locationExact: boolean
+  lat: string
+  lng: string
+  locationDisplay: string
+  locationExact: boolean
   community: string
   setField: (k: keyof FormState, v: string | boolean | File[]) => void
 }) {
-  const mapDivRef = useRef<HTMLDivElement>(null)
-  const initRef = useRef(false)
-  const mapObjRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
-  const geocoderRef = useRef<any>(null)
-  const searchRef = useRef<HTMLInputElement>(null)
-  const setFieldRef = useRef(setField)
-  setFieldRef.current = setField
-
-  // Poll until Google Maps SDK is ready
-  const [googleReady, setGoogleReady] = useState(!!(window as any).google?.maps)
-  useEffect(() => {
-    if (googleReady) return
-    const iv = setInterval(() => {
-      if ((window as any).google?.maps) { setGoogleReady(true); clearInterval(iv) }
-    }, 300)
-    return () => clearInterval(iv)
-  }, [googleReady])
-
-  // Initialize map once SDK is ready
-  useEffect(() => {
-    if (!googleReady || !mapDivRef.current || initRef.current) return
-    initRef.current = true
-    const g = (window as any).google
-    const initLat = lat ? parseFloat(lat) : 25.2048
-    const initLng = lng ? parseFloat(lng) : 55.2708
-
-    const map = new g.maps.Map(mapDivRef.current, {
-      center: { lat: initLat, lng: initLng },
-      zoom: lat ? 15 : 11,
-      disableDefaultUI: true,
-      zoomControl: true,
-      mapTypeControl: false,
-    })
-    mapObjRef.current = map
-    geocoderRef.current = new g.maps.Geocoder()
-
-    const marker = new g.maps.Marker({
-      position: { lat: initLat, lng: initLng },
-      map,
-      draggable: true,
-    })
-    markerRef.current = marker
-
-    marker.addListener('dragend', () => {
-      const pos = marker.getPosition()
-      const lv = pos.lat(), lnv = pos.lng()
-      setFieldRef.current('lat', lv.toFixed(6))
-      setFieldRef.current('lng', lnv.toFixed(6))
-      geocoderRef.current?.geocode({ location: { lat: lv, lng: lnv } }, (results: any, status: string) => {
-        if (status === 'OK' && results?.[0]) {
-          setFieldRef.current('locationDisplay', results[0].formatted_address)
-        }
-      })
-    })
-
-    if (searchRef.current) {
-      const ac = new g.maps.places.Autocomplete(searchRef.current, {
-        componentRestrictions: { country: 'ae' },
-      })
-      ac.addListener('place_changed', () => {
-        const place = ac.getPlace()
-        if (!place.geometry?.location) return
-        const lv = place.geometry.location.lat()
-        const lnv = place.geometry.location.lng()
-        map.setCenter({ lat: lv, lng: lnv })
-        map.setZoom(15)
-        marker.setPosition({ lat: lv, lng: lnv })
-        setFieldRef.current('lat', lv.toFixed(6))
-        setFieldRef.current('lng', lnv.toFixed(6))
-        setFieldRef.current('placeId', place.place_id || '')
-        setFieldRef.current('locationDisplay', place.formatted_address || place.name || '')
-      })
-    }
-  }, [googleReady]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-center when agent types a community (only if lat not manually set)
-  useEffect(() => {
-    if (!googleReady || !community || community.length < 3 || lat || !mapObjRef.current) return
-    const g = (window as any).google
-    if (!g?.maps?.places) return
-    const svc = new g.maps.places.PlacesService(mapObjRef.current)
-    svc.findPlaceFromQuery(
-      { query: `${community}, Dubai, UAE`, fields: ['geometry'] },
-      (results: any, status: string) => {
-        if (status === g.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry?.location) {
-          const loc = results[0].geometry.location
-          mapObjRef.current?.panTo(loc)
-          mapObjRef.current?.setZoom(13)
-          markerRef.current?.setPosition(loc)
-        }
-      }
+  if (!community) {
+    return (
+      <div style={{ border: '1.5px dashed var(--line,#e6e8eb)', borderRadius: 9, padding: '20px 16px', textAlign: 'center', background: '#fff' }}>
+        <div style={{ fontSize: 12.5, color: 'var(--quiet,#8b95a0)' }}>Select a location above to enable map pinning</div>
+      </div>
     )
-  }, [community, googleReady, lat])
-
-  return (
-    <div>
-      <div style={{ position: 'relative', height: 280, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--line,#e6e8eb)', background: '#f0f2f4' }}>
-        <div ref={mapDivRef} style={{ width: '100%', height: '100%' }} />
-        {!googleReady && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f4f2', fontSize: 13, color: 'var(--muted,#5a6470)' }}>
-            Loading map…
-          </div>
-        )}
-        <div style={{ position: 'absolute', top: 10, left: 10, right: 50, zIndex: 1 }}>
-          <input
-            ref={searchRef}
-            className="pnw-input"
-            placeholder="Search UAE location…"
-            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.97)', fontSize: 13 }}
-          />
+  }
+  if (lat && lng) {
+    return (
+      <div style={{ borderRadius: 9, overflow: 'hidden', border: '1px solid var(--line,#e6e8eb)' }}>
+        <img
+          src={`https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=600x180&key=AIzaSyBdZrnGpA6uof-um3fxLH1gu2Y6uoqCwqw&style=feature:all|saturation:-80`}
+          alt="map"
+          style={{ width: '100%', display: 'block' }}
+        />
+        <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
+          <span style={{ fontSize: 12, color: 'var(--muted,#5a6470)' }}>{locationDisplay || `${lat}, ${lng}`}</span>
+          <button onClick={() => { setField('lat', ''); setField('lng', '') }} style={{ fontSize: 11, color: 'var(--signal,#c2603a)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove pin</button>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--muted,#5a6470)', fontFamily: 'monospace', flexShrink: 0 }}>
-          {lat && lng ? `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}` : '—, —'}
-        </span>
-        {locationDisplay && (
-          <span style={{ fontSize: 11.5, color: 'var(--muted,#5a6470)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {locationDisplay}
-          </span>
-        )}
-        <div
-          onClick={() => setField('locationExact', !locationExact)}
-          style={{
-            padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            background: locationExact ? '#dcfce7' : 'var(--accent-soft,#e8f0ed)',
-            color: locationExact ? '#15803d' : 'var(--accent,#2d5a4f)',
-            border: '1.5px solid', borderColor: locationExact ? '#b6e8d5' : 'transparent',
-            transition: 'all .15s',
-          }}
-        >
-          {locationExact ? 'Exact location' : 'Approximate location'}
-        </div>
+    )
+  }
+  return (
+    <div style={{ border: '1.5px dashed var(--line,#e6e8eb)', borderRadius: 9, padding: '14px 16px', background: '#fff' }}>
+      <div style={{ fontSize: 12.5, color: 'var(--muted,#5a6470)', marginBottom: 10 }}>Optionally drop a map pin for "{community}"</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input className="pnw-input" value={lat} onChange={e => setField('lat', e.target.value)} placeholder="Latitude (e.g. 25.2048)" style={{ flex: 1 }} />
+        <input className="pnw-input" value={lng} onChange={e => setField('lng', e.target.value)} placeholder="Longitude (e.g. 55.2708)" style={{ flex: 1 }} />
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, cursor: 'pointer', color: 'var(--muted,#5a6470)' }}>
+          <input type="checkbox" checked={locationExact} onChange={e => setField('locationExact', e.target.checked)} />
+          Show exact location (default is ~200m radius)
+        </label>
       </div>
     </div>
   )

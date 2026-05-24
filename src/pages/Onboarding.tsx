@@ -6,6 +6,7 @@ import {
   Bath, Maximize2, Camera, Upload
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import LocationPicker, { type LocationValue } from '../components/LocationPicker'
 import { useAuth } from '../hooks/useAuth'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -20,7 +21,6 @@ const COLORS = [
 ]
 
 const LANGUAGES = ['English', 'Arabic', 'French', 'Russian', 'Chinese', 'Hindi', 'Urdu']
-const AREAS = ['Dubai Marina', 'Downtown Dubai', 'Palm Jumeirah', 'Business Bay', 'JBR', 'DIFC', 'Arabian Ranches', 'Meydan', 'Jumeirah', 'Al Barsha']
 
 const STEPS = [
   { id: 1, label: 'About You', icon: User },
@@ -180,6 +180,72 @@ function ChipInput({ label, options, value, onChange }: {
 }
 
 // ── Field ─────────────────────────────────────────────────────────────────────
+// ── AreasPicker ───────────────────────────────────────────────────────────────
+function AreasPicker({ label, value, onChange }: {
+  label: string
+  value: string[]
+  onChange: (v: string[]) => void
+}) {
+  const [adding, setAdding] = useState(false)
+
+  const remove = (area: string) => onChange(value.filter(a => a !== area))
+
+  const handleSelect = (loc: LocationValue | null) => {
+    if (!loc) return
+    const name = loc.name
+    if (!value.includes(name)) onChange([...value, name])
+    setAdding(false)
+  }
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0f1419', marginBottom: 10, letterSpacing: '-0.005em' }}>{label}</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 10 }}>
+        {value.map(area => (
+          <span key={area} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px 6px 12px',
+            background: '#e8f0ed', borderRadius: 20, fontSize: 12.5, fontWeight: 500,
+            color: '#2d5a4f', border: '1.5px solid #2d5a4f',
+          }}>
+            {area}
+            <button
+              type="button"
+              onClick={() => remove(area)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2d5a4f', lineHeight: 1, padding: 0, fontSize: 14, display: 'flex', alignItems: 'center' }}
+            >×</button>
+          </span>
+        ))}
+        {!adding && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            style={{
+              padding: '6px 12px', borderRadius: 20, fontSize: 12.5, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              border: '1.5px dashed #e6e8eb', background: '#fff', color: '#8b95a0',
+            }}
+          >+ Add area</button>
+        )}
+      </div>
+      {adding && (
+        <div>
+          <LocationPicker
+            value={null}
+            onChange={handleSelect}
+            filterTypes={['N', 'C']}
+            placeholder="Search communities & sub-communities…"
+          />
+          <button
+            type="button"
+            onClick={() => setAdding(false)}
+            style={{ marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#8b95a0', padding: 0, fontFamily: 'Inter, sans-serif' }}
+          >Cancel</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 20 }}>
@@ -235,7 +301,7 @@ function StepAboutYou({ form, update }: { form: ProfileForm; update: (k: keyof P
       </Field>
 
       <ChipInput label="Languages spoken" options={LANGUAGES} value={form.languages} onChange={v => update('languages', v)} />
-      <ChipInput label="Areas you cover" options={AREAS} value={form.areas} onChange={v => update('areas', v)} />
+      <AreasPicker label="Areas you cover" value={form.areas} onChange={v => update('areas', v)} />
     </div>
   )
 }
