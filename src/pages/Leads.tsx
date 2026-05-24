@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -23,6 +23,14 @@ interface Lead {
   } | null
 }
 
+interface Property {
+  id: string
+  title: string
+  community: string | null
+  price: number | null
+  images: string[] | null
+}
+
 type TabKey = 'all' | 'new' | 'contacted' | 'viewing' | 'offer' | 'closed'
 
 const PIPELINE_STEPS: Array<{ key: string; label: string }> = [
@@ -34,6 +42,40 @@ const PIPELINE_STEPS: Array<{ key: string; label: string }> = [
 ]
 
 const AVATAR_COLORS = ['', 'c2', 'c3', 'c4', 'c5', 'c6']
+
+const COUNTRY_CODES = [
+  { flag: '🇦🇪', code: '+971', label: 'UAE' },
+  { flag: '🇬🇧', code: '+44', label: 'UK' },
+  { flag: '🇺🇸', code: '+1', label: 'US' },
+  { flag: '🇸🇦', code: '+966', label: 'KSA' },
+  { flag: '🇮🇳', code: '+91', label: 'India' },
+  { flag: '🇸🇬', code: '+65', label: 'SG' },
+]
+
+const BUYER_TYPES = ['Cash', 'Mortgage', 'Investor', 'Browsing', 'Tenant']
+
+const BUDGET_OPTIONS = [
+  'Not sure yet',
+  'Under AED 2M',
+  'AED 2–5M',
+  'AED 5–10M',
+  'AED 10–20M',
+  'AED 20M+',
+]
+
+const TIMELINE_OPTIONS = [
+  'Just exploring',
+  'Within 1 month',
+  '1–3 months',
+  '3–6 months',
+  '6+ months',
+]
+
+const SOURCE_CARDS = [
+  { key: 'manual_phone', icon: '📞', label: 'Phone call' },
+  { key: 'manual_walkin', icon: '🚶', label: 'Walk-in' },
+  { key: 'manual_referral', icon: '🤝', label: 'Referral' },
+]
 
 function getInitials(name: string): string {
   const parts = name.trim().split(' ')
@@ -69,20 +111,490 @@ function getBuyerTag(bt: string | null): string {
   if (b.includes('cash')) return 'cash'
   if (b.includes('mortgage')) return 'mortgage'
   if (b.includes('invest')) return 'investor'
+  if (b.includes('tenant')) return 'browsing'
   return 'browsing'
 }
+
+function formatPrice(p: number | null): string {
+  if (!p) return ''
+  if (p >= 1_000_000) return `AED ${(p / 1_000_000).toFixed(1)}M`
+  if (p >= 1_000) return `AED ${(p / 1_000).toFixed(0)}K`
+  return `AED ${p.toLocaleString()}`
+}
+
+// ───────────────────────────── Drawer Component ─────────────────────────────
+
+interface DrawerState {
+  source: string
+  firstName: string
+  lastName: string
+  countryCode: string
+  phone: string
+  email: string
+  buyerType: string
+  propertyId: string | null
+  budget: string
+  timeline: string
+  status: string
+  note: string
+  whatsapp: boolean
+}
+
+const defaultDrawer = (): DrawerState => ({
+  source: 'manual_phone',
+  firstName: '',
+  lastName: '',
+  countryCode: '+971',
+  phone: '',
+  email: '',
+  buyerType: '',
+  propertyId: null,
+  budget: '',
+  timeline: '',
+  status: 'new',
+  note: '',
+  whatsapp: true,
+})
+
+interface AddLeadDrawerProps {
+  open: boolean
+  onClose: () => void
+  onSaved: () => void
+  userId: string
+  properties: Property[]
+}
+
+function AddLeadDrawer({ open, onClose, onSaved, userId, properties }: AddLeadDrawerProps) {
+  const [form, setForm] = useState<DrawerState>(defaultDrawer())
+  const [saving, setSaving] = useState(false)
+  const [propSearch, setPropSearch] = useState('')
+  const [success, setSuccess] = useState<{ name: string; buyerType: string; property: string | null; phone: string } | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Reset on open
+  useEffect(() => {
+    if (open) {
+      setForm(defaultDrawer())
+      setPropSearch('')
+      setSuccess(null)
+      setErrors({})
+    }
+  }, [open])
+
+  // Escape key
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (success) setSuccess(null)
+        else onClose()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, success, onClose])
+
+  const set = useCallback(<K extends keyof DrawerState>(key: K, val: DrawerState[K]) => {
+    setForm(f => ({ ...f, [key]: val }))
+  }, [])
+
+  const filteredProps = properties.filter(p =>
+    !propSearch ||
+    p.title.toLowerCase().includes(propSearch.toLowerCase()) ||
+    (p.community ?? '').toLowerCase().includes(propSearch.toLowerCase())
+  )
+
+  async function handleSave() {
+    const e: Record<string, string> = {}
+    if (!form.firstName.trim()) e.firstName = 'Required'
+    if (!form.phone.trim()) e.phone = 'Required'
+    if (Object.keys(e).length) { setErrors(e); return }
+
+    setSaving(true)
+    const fullPhone = `${form.countryCode}${form.phone.trim()}`
+    const fullName = [form.firstName.trim(), form.lastName.trim()].filter(Boolean).join(' ')
+
+    const { error } = await supabase.schema('agent_pages').from('leads').insert({
+      user_id: userId,
+      first_name: form.firstName.trim(),
+      last_name: form.lastName.trim() || null,
+      phone: fullPhone,
+      phone_country: form.countryCode,
+      email: form.email.trim() || null,
+      buyer_type: form.buyerType || null,
+      property_id: form.propertyId || null,
+      budget_range: form.budget || null,
+      timeline: form.timeline || null,
+      status: form.status,
+      note: form.note.trim() || null,
+      source: form.source,
+      whatsapp_followup: form.whatsapp,
+      // also keep legacy name field for list view
+      name: fullName,
+    })
+
+    setSaving(false)
+    if (error) {
+      console.error(error)
+      // Try without schema prefix
+      await supabase.from('leads').insert({
+        agent_id: userId,
+        name: fullName,
+        phone: fullPhone,
+        email: form.email.trim() || null,
+        buyer_type: form.buyerType || null,
+        property_id: form.propertyId || null,
+        status: form.status,
+        message: form.note.trim() || null,
+        source: form.source,
+      })
+    }
+
+    const linkedProp = properties.find(p => p.id === form.propertyId)
+    setSuccess({
+      name: fullName,
+      buyerType: form.buyerType || 'Browsing',
+      property: linkedProp ? linkedProp.title : null,
+      phone: fullPhone,
+    })
+    onSaved()
+  }
+
+  const sourceLabelMap: Record<string, string> = {
+    manual_phone: 'Phone call',
+    manual_walkin: 'Walk-in',
+    manual_referral: 'Referral',
+  }
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className={`drawer-overlay${open ? ' open' : ''}`}
+        onClick={() => { if (success) setSuccess(null); else onClose(); }}
+      />
+
+      {/* Drawer */}
+      <div className={`add-lead-drawer${open ? ' open' : ''}`}>
+        {/* Header */}
+        <div className="drawer-header">
+          <div>
+            <div className="drawer-eyebrow">NEW LEAD</div>
+            <div className="drawer-title">Add a lead manually</div>
+            <div className="drawer-subtitle">Only you see this — not shared anywhere.</div>
+          </div>
+          <button className="drawer-close" onClick={onClose}>
+            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        {/* Source chooser */}
+        <div className="drawer-source-section">
+          <div className="drawer-section-label">How did you meet?</div>
+          <div className="drawer-source-grid">
+            {SOURCE_CARDS.map(s => (
+              <button
+                key={s.key}
+                className={`source-card${form.source === s.key ? ' selected' : ''}`}
+                onClick={() => set('source', s.key)}
+                type="button"
+              >
+                <span className="source-card-icon">{s.icon}</span>
+                <span className="source-card-label">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="drawer-body">
+          {/* Section 1 */}
+          <div className="drawer-section">
+            <div className="drawer-section-num">1</div>
+            <div className="drawer-section-content">
+              <div className="drawer-section-title">Who they are</div>
+
+              <div className="drawer-row">
+                <div className="drawer-field">
+                  <label className="drawer-label">First name <span className="req">*</span></label>
+                  <input
+                    className={`drawer-input${errors.firstName ? ' error' : ''}`}
+                    placeholder="e.g. Ahmed"
+                    value={form.firstName}
+                    onChange={e => { set('firstName', e.target.value); setErrors(v => ({ ...v, firstName: '' })) }}
+                  />
+                  {errors.firstName && <div className="field-error">{errors.firstName}</div>}
+                </div>
+                <div className="drawer-field">
+                  <label className="drawer-label">Last name</label>
+                  <input
+                    className="drawer-input"
+                    placeholder="Optional"
+                    value={form.lastName}
+                    onChange={e => set('lastName', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="drawer-field">
+                <label className="drawer-label">Phone / WhatsApp <span className="req">*</span></label>
+                <div className={`phone-input-wrap${errors.phone ? ' error' : ''}`}>
+                  <select
+                    className="country-code-select"
+                    value={form.countryCode}
+                    onChange={e => set('countryCode', e.target.value)}
+                  >
+                    {COUNTRY_CODES.map(c => (
+                      <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                    ))}
+                  </select>
+                  <input
+                    className="phone-number-input"
+                    placeholder="50 123 4567"
+                    value={form.phone}
+                    onChange={e => { set('phone', e.target.value); setErrors(v => ({ ...v, phone: '' })) }}
+                    type="tel"
+                  />
+                </div>
+                {errors.phone && <div className="field-error">{errors.phone}</div>}
+              </div>
+
+              <div className="drawer-field">
+                <label className="drawer-label">Email <span className="optional">(optional)</span></label>
+                <input
+                  className="drawer-input"
+                  placeholder="name@email.com"
+                  value={form.email}
+                  onChange={e => set('email', e.target.value)}
+                  type="email"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2 */}
+          <div className="drawer-section">
+            <div className="drawer-section-num">2</div>
+            <div className="drawer-section-content">
+              <div className="drawer-section-title">What they're looking for</div>
+
+              <div className="drawer-field">
+                <label className="drawer-label">Buyer type</label>
+                <div className="pill-row">
+                  {BUYER_TYPES.map(bt => (
+                    <button
+                      key={bt}
+                      type="button"
+                      className={`pill${form.buyerType === bt ? ' selected' : ''}`}
+                      onClick={() => set('buyerType', form.buyerType === bt ? '' : bt)}
+                    >
+                      {bt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="drawer-field">
+                <label className="drawer-label">Linked property</label>
+                <div className="prop-picker">
+                  <div className="prop-search-wrap">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+                    <input
+                      className="prop-search-input"
+                      placeholder="Search properties..."
+                      value={propSearch}
+                      onChange={e => setPropSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="prop-list">
+                    <button
+                      type="button"
+                      className={`prop-item no-prop${form.propertyId === null ? ' selected' : ''}`}
+                      onClick={() => set('propertyId', null)}
+                    >
+                      <div className="prop-item-info">
+                        <div className="prop-item-name">No property yet</div>
+                        <div className="prop-item-meta">General enquiry</div>
+                      </div>
+                      {form.propertyId === null && (
+                        <svg className="prop-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                      )}
+                    </button>
+                    {filteredProps.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`prop-item${form.propertyId === p.id ? ' selected' : ''}`}
+                        onClick={() => set('propertyId', p.id)}
+                      >
+                        <div
+                          className="prop-item-thumb"
+                          style={p.images?.[0] ? { backgroundImage: `url(${p.images[0]})` } : undefined}
+                        />
+                        <div className="prop-item-info">
+                          <div className="prop-item-name">{p.title}</div>
+                          <div className="prop-item-meta">
+                            {[p.community, formatPrice(p.price)].filter(Boolean).join(' · ')}
+                          </div>
+                        </div>
+                        {form.propertyId === p.id && (
+                          <svg className="prop-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="drawer-row">
+                <div className="drawer-field">
+                  <label className="drawer-label">Budget range</label>
+                  <select
+                    className="drawer-select"
+                    value={form.budget}
+                    onChange={e => set('budget', e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    {BUDGET_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="drawer-field">
+                  <label className="drawer-label">Timeline</label>
+                  <select
+                    className="drawer-select"
+                    value={form.timeline}
+                    onChange={e => set('timeline', e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    {TIMELINE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3 */}
+          <div className="drawer-section">
+            <div className="drawer-section-num">3</div>
+            <div className="drawer-section-content">
+              <div className="drawer-section-title">Pipeline status</div>
+
+              <div className="drawer-field">
+                <label className="drawer-label">Status</label>
+                <div className="status-stepper">
+                  {PIPELINE_STEPS.map(s => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      className={`stepper-pill${form.status === s.key ? ' selected' : ''}`}
+                      onClick={() => set('status', s.key)}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="drawer-field">
+                <label className="drawer-label">First note <span className="optional">(optional)</span></label>
+                <textarea
+                  className="drawer-textarea"
+                  rows={3}
+                  placeholder="What did you discuss? Any details to remember..."
+                  value={form.note}
+                  onChange={e => set('note', e.target.value)}
+                />
+              </div>
+
+              <div className={`notify-card${form.whatsapp ? ' active' : ''}`}>
+                <div className="notify-card-info">
+                  <div className="notify-card-title">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
+                    WhatsApp follow-up
+                  </div>
+                  <div className="notify-card-sub">Mark as ready to follow up via WhatsApp</div>
+                </div>
+                <button
+                  type="button"
+                  className={`toggle-btn${form.whatsapp ? ' on' : ''}`}
+                  onClick={() => set('whatsapp', !form.whatsapp)}
+                  aria-label="Toggle WhatsApp follow-up"
+                >
+                  <span className="toggle-knob" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="drawer-footer">
+          <div className="drawer-footer-tag">
+            Lead source will be tagged as Manual · {sourceLabelMap[form.source]}
+          </div>
+          <div className="drawer-footer-actions">
+            <button className="btn btn-outline" onClick={onClose} type="button">Cancel</button>
+            <button
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={saving}
+              type="button"
+            >
+              {saving ? 'Saving...' : 'Save lead ✓'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Overlay */}
+      {success && (
+        <div className="success-overlay" onClick={() => setSuccess(null)}>
+          <div className="success-card" onClick={e => e.stopPropagation()}>
+            <div className="success-check">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div className="success-title">Lead saved</div>
+            <div className="success-summary">
+              <div className="success-avatar">{getInitials(success.name)}</div>
+              <div className="success-info">
+                <div className="success-name">{success.name}</div>
+                <div className="success-meta">
+                  {success.buyerType}
+                  {success.property ? ` · ${success.property}` : ''}
+                  {success.phone ? ` · ${success.phone}` : ''}
+                </div>
+              </div>
+            </div>
+            <div className="success-actions">
+              <button className="btn btn-outline" onClick={() => { setSuccess(null); onClose(); }}>
+                View in pipeline →
+              </button>
+              <button className="btn btn-primary" onClick={() => { setSuccess(null) }}>
+                Add another lead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ───────────────────────────── Main Page ─────────────────────────────
 
 export default function Leads() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [leads, setLeads] = useState<Lead[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>('all')
   const [search, setSearch] = useState('')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [noteText, setNoteText] = useState('')
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
-  useEffect(() => {
+  const fetchLeads = useCallback(() => {
     if (!user) return
     supabase
       .from('leads')
@@ -93,6 +605,18 @@ export default function Leads() {
         setLeads((data as Lead[]) ?? [])
         setLoading(false)
       })
+  }, [user])
+
+  useEffect(() => { fetchLeads() }, [fetchLeads])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('properties')
+      .select('id, title, community, price, images')
+      .eq('agent_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setProperties((data as Property[]) ?? []))
   }, [user])
 
   const filtered = leads.filter(l => {
@@ -153,7 +677,7 @@ export default function Leads() {
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               Export
             </button>
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={() => setDrawerOpen(true)}>
               <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
               Add manually
             </button>
@@ -191,8 +715,8 @@ export default function Leads() {
               <svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
               Conversion rate
             </div>
-            <div className="kpi-val">8.4%</div>
-            <div className="kpi-delta">+1.2pp vs last 30d</div>
+            <div className="kpi-val">0.0%</div>
+            <div className="kpi-delta muted">—</div>
           </div>
         </div>
       </div>
@@ -323,7 +847,6 @@ export default function Leads() {
                     </button>
                   </div>
 
-                  {/* Property card */}
                   {selectedLead.properties && (
                     <div
                       className="lead-detail-prop"
@@ -342,13 +865,9 @@ export default function Leads() {
                     </div>
                   )}
 
-                  {/* Quick actions */}
                   <div className="lead-detail-actions">
                     {selectedLead.phone ? (
-                      <a
-                        className="lead-action-btn primary"
-                        href={`tel:${selectedLead.phone}`}
-                      >
+                      <a className="lead-action-btn primary" href={`tel:${selectedLead.phone}`}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.72 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0122 16.92z"/>
                         </svg>
@@ -376,7 +895,6 @@ export default function Leads() {
                     </button>
                   </div>
 
-                  {/* Pipeline */}
                   <div className="lead-pipeline">
                     {PIPELINE_STEPS.map((step, i) => {
                       const currentIdx = PIPELINE_STEPS.findIndex(s => s.key === selectedLead.status)
@@ -394,7 +912,6 @@ export default function Leads() {
                     })}
                   </div>
 
-                  {/* Contact details */}
                   <div className="detail-section">
                     <div className="detail-section-title">Contact</div>
                     <div className="detail-fields">
@@ -421,7 +938,6 @@ export default function Leads() {
                     </div>
                   </div>
 
-                  {/* Source */}
                   {selectedLead.source && (
                     <div className="detail-section">
                       <div className="detail-section-title">Source</div>
@@ -434,7 +950,6 @@ export default function Leads() {
                     </div>
                   )}
 
-                  {/* Message / Notes */}
                   {selectedLead.message && (
                     <div className="detail-section">
                       <div className="detail-section-title">Message</div>
@@ -447,7 +962,6 @@ export default function Leads() {
                     </div>
                   )}
 
-                  {/* Notes input */}
                   <div className="detail-section">
                     <div className="detail-section-title">Notes</div>
                     <div className="notes-input-wrap">
@@ -466,6 +980,17 @@ export default function Leads() {
           </div>
         </div>
       </div>
+
+      {/* ADD LEAD DRAWER */}
+      {user && (
+        <AddLeadDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSaved={fetchLeads}
+          userId={user.id}
+          properties={properties}
+        />
+      )}
     </div>
   )
 }
