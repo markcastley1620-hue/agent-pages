@@ -16,7 +16,7 @@ interface Property {
   lat: number | null; lng: number | null; location_display: string | null; location_exact: boolean | null
 }
 interface Profile {
-  id: string; display_name: string; slug: string; headline: string | null
+  id: string; display_name: string | null; first_name: string | null; last_name: string | null; slug: string; headline: string | null; brokerage_name: string | null
   phone: string | null; whatsapp: string | null; email: string | null
   photo_url: string | null; years_experience: number | null; deals_closed: number | null
   rera_number: string | null; specialisms: string[] | null
@@ -69,6 +69,9 @@ export default function PublicProperty() {
 
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Inter,sans-serif',color:'#999',fontSize:'14px'}}>Loading…</div>
   if (!property || !agent) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Inter,sans-serif',color:'#999',fontSize:'14px'}}>Property not found.</div>
+
+  // Resolve display name from display_name or first+last
+  const agentName: string = agent.display_name || [agent.first_name, agent.last_name].filter(Boolean).join(' ') || 'Agent'
 
   const price = fmtPrice(property.asking_price_aed)
   const psqft = property.price_psqft_aed ? `AED ${property.price_psqft_aed.toLocaleString()} per sqft` : null
@@ -188,10 +191,10 @@ export default function PublicProperty() {
       <nav className="nav">
         <div className="nav-brand">
           <div className="nav-avatar">
-            {agent.photo_url ? <img src={agent.photo_url} alt={agent.display_name} /> : initials(agent.display_name)}
+            {agent.photo_url ? <img src={agent.photo_url} alt={agentName} /> : initials(agentName)}
           </div>
           <div>
-            <div className="nav-name">{agent.display_name}</div>
+            <div className="nav-name">{agentName}</div>
             {agent.headline && <div className="nav-meta">{agent.headline}</div>}
           </div>
         </div>
@@ -251,7 +254,7 @@ export default function PublicProperty() {
                 </div>
               </div>
               <div className="agent-avatar" style={{width:'52px',height:'52px',flexShrink:0}}>
-                {agent.photo_url ? <img src={agent.photo_url} alt={agent.display_name} /> : initials(agent.display_name)}
+                {agent.photo_url ? <img src={agent.photo_url} alt={agentName} /> : initials(agentName)}
               </div>
             </div>
 
@@ -310,7 +313,7 @@ export default function PublicProperty() {
                   ['Parking', property.parking_spaces && `${property.parking_spaces} space${property.parking_spaces > 1 ? 's' : ''}`],
                   ['Service charge', property.service_charge_psqft && `AED ${property.service_charge_psqft}/sqft`],
                   ['Completion', property.completion_status],
-                  ['Listed by', agent.display_name],
+                  ['Listed by', agentName],
                   ['DLD permit', property.dld_permit_number],
                 ].filter(([,v]) => v != null && v !== '').map(([label, val], i) => (
                   <div key={i}>
@@ -363,10 +366,10 @@ export default function PublicProperty() {
               <h2 className="section-title">Your agent</h2>
               <div className="agent-row">
                 <div className="agent-avatar">
-                  {agent.photo_url ? <img src={agent.photo_url} alt={agent.display_name} /> : initials(agent.display_name)}
+                  {agent.photo_url ? <img src={agent.photo_url} alt={agentName} /> : initials(agentName)}
                 </div>
                 <div style={{flex:1}}>
-                  <div className="agent-name">{agent.display_name}</div>
+                  <div className="agent-name">{agentName}</div>
                   <div className="agent-meta">{[agent.headline, agent.specialisms?.slice(0,2).join(' · ')].filter(Boolean).join(' · ')}</div>
                   {agent.deals_closed && <div className="agent-meta" style={{marginTop:'4px'}}>★ {agent.deals_closed} closed deals</div>}
                 </div>
@@ -441,7 +444,7 @@ export default function PublicProperty() {
 
       <footer className="footer">
         <div className="footer-inner">
-          <div style={{fontSize:'13px',color:'#6e6e6e'}}>{agent.display_name}{agent.rera_number && ` · RERA ${agent.rera_number}`}</div>
+          <div style={{fontSize:'13px',color:'#6e6e6e'}}>{agentName}{agent.rera_number && ` · RERA ${agent.rera_number}`}</div>
           <div className="footer-links">
             <a href="#">Privacy</a>
             <a href="#">Terms</a>
