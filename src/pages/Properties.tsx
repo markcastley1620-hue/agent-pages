@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AIVisibilityDots } from '../components/AISearchVisibility'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import '../styles/properties.css'
@@ -18,6 +19,7 @@ interface Property {
   updated_at: string
   view_count?: number
   inquiry_count?: number
+  visibility_config?: Record<string, boolean>
 }
 
 function formatPrice(p: number | null): string {
@@ -304,6 +306,13 @@ export default function Properties() {
                         <div className="metric dim">—</div>
                       ) : (
                         <div className="metric">{prop.inquiry_count ?? 0}</div>
+                      )}
+                    </div>
+
+                    {/* AI Visibility Dots */}
+                    <div className="prop-updated-cell" style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                      {!isDraft && prop.visibility_config && (
+                        <AIVisibilityDots config={prop.visibility_config} />
                       )}
                     </div>
 

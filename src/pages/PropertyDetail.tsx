@@ -4,6 +4,7 @@ import { Eye, Users, Edit, ExternalLink, Circle, ToggleLeft, ToggleRight } from 
 
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import AISearchVisibility from '../components/AISearchVisibility'
 
 interface Property {
   id: string
@@ -21,6 +22,7 @@ interface Property {
   show_price: boolean
   agent_id: string
   created_at: string
+  visibility_config?: Record<string, boolean>
 }
 
 const statusColors: Record<string, string> = {
@@ -246,6 +248,18 @@ export default function PropertyDetail() {
             </Link>
           </div>
         </div>
+
+        {/* AI Search Visibility — shown for published properties */}
+        {isLive && (
+          <div className="mt-6">
+            <AISearchVisibility
+              mode="post-publish"
+              visibilityConfig={property.visibility_config ?? { google: true, chatgpt: true, claude: true, gemini: true, perplexity: true, bing: true, grok: true }}
+              onConfigChange={() => {}}
+              publishedAt={new Date(property.created_at)}
+            />
+          </div>
+        )}
       </div>
   )
 }

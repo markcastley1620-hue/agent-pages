@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import AppShell from '../components/AppShell'
 import LocationPicker, { type LocationValue } from '../components/LocationPicker'
+import AISearchVisibility from '../components/AISearchVisibility'
 
 /* ── helpers ── */
 function slugify(s: string) {
@@ -51,6 +52,7 @@ interface FormState {
   showSoldPricing: boolean
   showLeadForm: boolean
   showOnPortfolio: boolean
+  visibilityConfig: Record<string, boolean>
 }
 
 interface AgentProfile {
@@ -140,6 +142,7 @@ export default function PropertyNew() {
     tone: 'Refined', description: '',
     photos: [],
     slug: '', customDomain: '', showSoldPricing: false, showLeadForm: true, showOnPortfolio: true,
+    visibilityConfig: { google: true, chatgpt: true, claude: true, gemini: true, perplexity: true, bing: true, grok: true },
   })
 
   useEffect(() => {
@@ -148,7 +151,8 @@ export default function PropertyNew() {
       .then(({ data }) => { if (data) setProfile(data) })
   }, [user])
 
-  const setField = (key: keyof FormState, val: string | boolean | File[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const setField = (key: keyof FormState, val: any) => {
     setSaved(false)
     setForm(f => ({ ...f, [key]: val }))
     setTimeout(() => setSaved(true), 800)
@@ -314,7 +318,7 @@ export default function PropertyNew() {
             {step === 2 && <Step2Form form={form} setField={setField} onBack={() => setStep(1)} onContinue={() => setStep(3)} />}
             {step === 3 && <Step3Form form={form} setField={setField} onBack={() => setStep(2)} onContinue={() => setStep(4)} />}
             {step === 4 && <Step4Form form={form} setField={setField} onBack={() => setStep(3)} onContinue={() => setStep(5)} />}
-            {step === 5 && <Step5Form form={form} setField={setField} onBack={() => setStep(4)} onContinue={() => setStep(6)} agentSlug={agentSlug} />}
+            {step === 5 && <Step5Form form={form} setField={setField} onBack={() => setStep(4)} onContinue={() => setStep(6)} agentSlug={agentSlug} onVisibilityChange={cfg => setField('visibilityConfig', cfg)} />}
             {step === 6 && (
               <Step6Form
                 form={form}
@@ -346,6 +350,7 @@ export default function PropertyNew() {
                     show_sold_pricing: form.showSoldPricing,
                     show_lead_form: form.showLeadForm,
                     show_on_portfolio: form.showOnPortfolio,
+                    visibility_config: form.visibilityConfig,
                     lat: form.lat ? parseFloat(form.lat) : null,
                     lng: form.lng ? parseFloat(form.lng) : null,
                     place_id: form.placeId || null,
@@ -1102,12 +1107,14 @@ function ToggleCard({ label, desc, value, onChange }: { label: string; desc: str
   )
 }
 
-function Step5Form({ form, setField, onBack, onContinue, agentSlug }: {
+function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibilityChange }: {
   form: FormState
-  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setField: (k: keyof FormState, v: any) => void
   onBack: () => void
   onContinue: () => void
   agentSlug: string
+  onVisibilityChange: (cfg: Record<string, boolean>) => void
 }) {
   const derivedSlug = form.slug || slugify(form.pageTitle) || 'property-title'
   const [txnChecked, setTxnChecked] = useState(MOCK_TRANSACTIONS.map(t => t.checked))
@@ -1215,6 +1222,13 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug }: {
         onChange={v => setField('showOnPortfolio', v)}
       />
 
+      {/* AI Search Visibility */}
+      <AISearchVisibility
+        mode="pre-publish"
+        visibilityConfig={form.visibilityConfig}
+        onConfigChange={onVisibilityChange}
+      />
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 32, borderTop: '1px solid var(--line-soft,#f0f2f4)', marginTop: 16 }}>
         <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to photos</button>
         <button onClick={onContinue} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff', fontFamily: 'inherit' }}>Review &amp; publish →</button>
@@ -1228,13 +1242,15 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug }: {
 ═══════════════════════════════════════════════════════════════ */
 function Step6Form({ form, setField: _setField, onBack, onPublish, onSaveDraft, agentSlug, formattedPrice }: {
   form: FormState
-  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setField: (k: keyof FormState, v: any) => void
   onBack: () => void
   onPublish: () => void
   onSaveDraft: () => void
   agentSlug: string
   formattedPrice: string
 }) {
+  const [publishedAt, setPublishedAt] = useState<Date | null>(null)
   const effectiveSlug = form.slug || slugify(form.pageTitle) || 'property-title'
   const pageUrl = form.customDomain ? form.customDomain : `agentpages.io/${agentSlug}/${effectiveSlug}`
   const truncateDesc = form.description.length > 200 ? form.description.slice(0, 200) + '…' : form.description
@@ -1310,7 +1326,16 @@ function Step6Form({ form, setField: _setField, onBack, onPublish, onSaveDraft, 
         ))}
       </div>
 
-      <button onClick={onPublish} style={{
+      {publishedAt && (
+        <AISearchVisibility
+          mode="post-publish"
+          visibilityConfig={form.visibilityConfig}
+          onConfigChange={() => {}}
+          publishedAt={publishedAt}
+        />
+      )}
+
+      <button onClick={async () => { setPublishedAt(new Date()); await onPublish() }} style={{
         width: '100%', padding: '14px 24px', borderRadius: 10, fontSize: 15, fontWeight: 700,
         cursor: 'pointer', border: 'none', background: 'var(--accent,#2d5a4f)', color: '#fff',
         fontFamily: 'inherit', marginBottom: 10,
