@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import '../styles/leads.css'
@@ -39,13 +39,6 @@ function getInitials(name: string): string {
   const parts = name.trim().split(' ')
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   return name.substring(0, 2).toUpperCase()
-}
-
-function getUserInitials(email: string | undefined): string {
-  if (!email) return 'U'
-  const parts = email.split('@')[0].split(/[._-]/)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return email.substring(0, 2).toUpperCase()
 }
 
 function timeAgo(dateStr: string): string {
@@ -145,32 +138,8 @@ export default function Leads() {
     }
   }
 
-  const userInitials = getUserInitials(user?.email)
-
   return (
     <div className="leads-page">
-      {/* TOP BAR */}
-      <div className="topbar">
-        <div className="topbar-left">
-          <div className="topbar-brand">
-            <div className="topbar-logo">a</div>
-            <div className="topbar-name">Agent Pages</div>
-          </div>
-          <nav className="topbar-nav">
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/properties">Properties</Link>
-            <Link to="/leads" className="active">Leads</Link>
-            <Link to="/portfolio/edit">Portfolio</Link>
-          </nav>
-        </div>
-        <div className="topbar-right">
-          <button className="topbar-bell">
-            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-            <div className="topbar-bell-dot" />
-          </button>
-          <div className="topbar-avatar">{userInitials}</div>
-        </div>
-      </div>
 
       {/* PAGE HEAD */}
       <div className="page-head">

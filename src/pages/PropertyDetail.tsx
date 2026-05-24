@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Eye, Users, Edit, ExternalLink, Circle, ToggleLeft, ToggleRight } from 'lucide-react'
-import Layout, { Breadcrumb } from '../components/Layout'
+
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -66,30 +66,24 @@ export default function PropertyDetail() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center py-24">
-          <div className="w-6 h-6 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center py-24">
+        <div className="w-6 h-6 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
   }
 
   if (!property) {
     return (
-      <Layout>
-        <div className="p-8">
-          <div className="text-sm text-gray-400">Property not found.</div>
-        </div>
-      </Layout>
+      <div className="p-8">
+        <div className="text-sm text-gray-400">Property not found.</div>
+      </div>
     )
   }
 
   const isLive = property.status === 'live'
 
   return (
-    <Layout>
-      <div className="p-8">
-        <Breadcrumb items={[{ label: 'Properties', to: '/properties' }, { label: property.title }]} />
+    <div className="p-8">
 
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
@@ -253,6 +247,5 @@ export default function PropertyDetail() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

@@ -6,7 +6,7 @@ import {
   Check, Upload, Camera, Globe, ChevronRight, Plus, ExternalLink,
   AlertTriangle, Trash2, RefreshCw, Copy
 } from 'lucide-react'
-import Layout from '../components/Layout'
+
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -754,11 +754,9 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <Layout>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px' }}>
-          <div style={{ width: 24, height: 24, border: '2px solid #2d5a4f', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-        </div>
-      </Layout>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px' }}>
+        <div style={{ width: 24, height: 24, border: '2px solid #2d5a4f', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      </div>
     )
   }
 
@@ -784,7 +782,7 @@ export default function Settings() {
   const currentSection = NAV_SECTIONS.find(s => s.id === activeSection)
 
   return (
-    <Layout>
+    <>
       <div style={{ display: 'flex', minHeight: '100%', fontFamily: 'Inter, sans-serif', color: '#0f1419' }}>
         {/* Settings sidebar */}
         <div className="settings-sidebar" style={{ width: 220, borderRight: '1px solid #f0f2f4', background: '#fff', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
@@ -841,6 +839,6 @@ export default function Settings() {
           .settings-desktop-header { display: none; }
         }
       `}</style>
-    </Layout>
+    </>
   )
 }

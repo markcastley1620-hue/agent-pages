@@ -495,26 +495,11 @@ export default function Onboarding() {
   const progress = (completedSteps / STEPS.length) * 100
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fbfaf7', fontFamily: 'Inter, sans-serif', color: '#0f1419' }}>
-      {/* Topbar */}
-      <div style={{ height: 60, background: '#fff', borderBottom: '1px solid #f0f2f4', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: '#2d5a4f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Home size={14} color="#fff" />
-          </div>
-          <span style={{ fontSize: 14.5, fontWeight: 600, color: '#0f1419', letterSpacing: '-0.015em' }}>Agent Pages</span>
-          <span style={{ color: '#e6e8eb', margin: '0 4px' }}>›</span>
-          <span style={{ fontSize: 13, color: '#5a6470' }}>Profile setup</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12.5, color: '#8b95a0' }}>Step {step} of {STEPS.length}</span>
-        </div>
-      </div>
-
+    <div style={{ minHeight: 'calc(100vh - 60px)', background: '#fbfaf7', fontFamily: 'Inter, sans-serif', color: '#0f1419' }}>
       {/* Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', minHeight: 'calc(100vh - 60px)' }} className="wiz-grid">
         {/* Rail */}
-        <div style={{ background: '#fff', borderRight: '1px solid #f0f2f4', padding: '32px 0', position: 'sticky', top: 60, alignSelf: 'start', height: 'calc(100vh - 60px)', overflowY: 'auto' }}>
+        <div style={{ background: '#fff', borderRight: '1px solid #f0f2f4', padding: '32px 0', position: 'sticky', top: 0, alignSelf: 'start', height: 'calc(100vh - 60px)', overflowY: 'auto' }}>
           <div style={{ padding: '0 24px 20px', borderBottom: '1px solid #f0f2f4', marginBottom: 16 }}>
             <div style={{ fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8b95a0', fontWeight: 600, marginBottom: 4 }}>Setup progress</div>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#0f1419', letterSpacing: '-0.015em' }}>Profile wizard</div>

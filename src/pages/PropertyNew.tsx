@@ -275,25 +275,6 @@ export default function PropertyNew() {
 
   return (
     <div className="wiz-page">
-      {/* TOP BAR */}
-      <div className="wiz-topbar">
-        <div className="wiz-topbar-left">
-          <div className="wiz-topbar-brand">
-            <div className="wiz-topbar-logo">a</div>
-            <div className="wiz-topbar-name">Agent Pages</div>
-          </div>
-          <div className="wiz-topbar-crumb">
-            <a onClick={() => navigate('/properties')}>Properties</a>
-            <span className="wiz-topbar-crumb-sep">/</span>
-            <span className="wiz-topbar-crumb-current">Add new property</span>
-          </div>
-        </div>
-        <div className="wiz-topbar-right">
-          <button className="wiz-topbar-btn ghost" onClick={() => navigate('/properties')}>
-            Save &amp; exit
-          </button>
-        </div>
-      </div>
 
       <div className="wiz-layout">
         {/* PROGRESS RAIL */}

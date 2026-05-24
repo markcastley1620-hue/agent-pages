@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
-  LayoutDashboard, Building2, Users, BarChart2, Settings, HelpCircle,
-  LogOut, Lock, Plus, ChevronRight, X, Eye, Calendar,
-  Percent, Zap, Globe, Bell, AlertTriangle, Info, CheckCircle,
-  ArrowUpRight, Activity
+  Users, Plus, ChevronRight, X, Eye, Calendar,
+  Percent, Zap, Globe, AlertTriangle, Info, CheckCircle,
+  ArrowUpRight, Activity, Bell
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -75,166 +74,6 @@ function ActivityIcon({ type }: { type: MockLead['type'] }) {
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   SIDEBAR
-═══════════════════════════════════════════════════════════════════════════ */
-function Sidebar({ propertiesCount, leadsCount, profile, plan }: {
-  propertiesCount: number
-  leadsCount: number
-  profile: Profile | null
-  plan: string
-}) {
-  const navigate = useNavigate()
-  const portfolioLocked = propertiesCount < 3
-
-  async function signOut() {
-    await supabase.auth.signOut()
-    navigate('/login')
-  }
-
-  const initials = profile
-    ? `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase()
-    : '?'
-
-  return (
-    <aside style={{
-      width: 240, flexShrink: 0,
-      background: '#fff',
-      borderRight: '1px solid #f0f0f0',
-      display: 'flex', flexDirection: 'column',
-      position: 'sticky', top: 0, height: '100vh',
-      overflow: 'hidden'
-    }} className="dashboard-sidebar">
-      {/* Brand */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 8,
-            background: 'linear-gradient(135deg, #2ab695, #1d9478)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontWeight: 700, fontSize: 14, letterSpacing: '-0.5px'
-          }}>a</div>
-          <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a', letterSpacing: '-0.3px' }}>Agent Pages</span>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 10px 6px' }}>Workspace</div>
-
-          <NavLink to="/dashboard" style={({ isActive }) => navStyle(isActive)}>
-            <LayoutDashboard size={15} />
-            <span>Dashboard</span>
-          </NavLink>
-
-          <NavLink to="/properties" style={({ isActive }) => navStyle(isActive)}>
-            <Building2 size={15} />
-            <span style={{ flex: 1 }}>Properties</span>
-            {propertiesCount > 0 && <Badge>{propertiesCount}</Badge>}
-          </NavLink>
-
-          <NavLink to="/leads" style={({ isActive }) => navStyle(isActive)}>
-            <Users size={15} />
-            <span style={{ flex: 1 }}>Leads</span>
-            {leadsCount > 0 && <Badge>{leadsCount}</Badge>}
-          </NavLink>
-
-          {portfolioLocked ? (
-            <div style={{ ...navStyle(false) as React.CSSProperties, opacity: 0.45, cursor: 'not-allowed' }}>
-              <Lock size={15} />
-              <span style={{ flex: 1 }}>Portfolio</span>
-              <span style={{ fontSize: 10, color: '#aaa' }}>3 props</span>
-            </div>
-          ) : (
-            <NavLink to="/portfolio/edit" style={({ isActive }) => navStyle(isActive)}>
-              <Globe size={15} />
-              <span>Portfolio</span>
-            </NavLink>
-          )}
-
-          <NavLink to="/analytics" style={({ isActive }) => navStyle(isActive)}>
-            <BarChart2 size={15} />
-            <span>Analytics</span>
-          </NavLink>
-        </div>
-
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 10px 6px' }}>Account</div>
-          <NavLink to="/settings" style={({ isActive }) => navStyle(isActive)}>
-            <Settings size={15} />
-            <span>Settings</span>
-          </NavLink>
-          <NavLink to="/help" style={({ isActive }) => navStyle(isActive)}>
-            <HelpCircle size={15} />
-            <span>Help</span>
-          </NavLink>
-        </div>
-      </nav>
-
-      {/* Plan card */}
-      <div style={{ padding: '0 10px 10px' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-          border: '1px solid #fde68a',
-          borderRadius: 12, padding: '12px 14px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#92400e' }}>{plan} Plan</span>
-            <Link to="/settings" style={{ fontSize: 10, color: '#d97706', textDecoration: 'none', fontWeight: 500 }}>Upgrade</Link>
-          </div>
-          <div style={{ fontSize: 11, color: '#78350f', marginBottom: 6 }}>{propertiesCount} / 5 properties</div>
-          <div style={{ height: 4, background: '#fde68a', borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min((propertiesCount / 5) * 100, 100)}%`, background: '#d97706', borderRadius: 99, transition: 'width 0.4s' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* User row */}
-      <div style={{ padding: '10px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #2ab695, #1d9478)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: 12, fontWeight: 600, flexShrink: 0
-        }}>{initials}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {profile ? `${profile.first_name} ${profile.last_name}` : '—'}
-          </div>
-          <div style={{ fontSize: 11, color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {profile?.email ?? ''}
-          </div>
-        </div>
-        <button onClick={signOut} title="Sign out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, display: 'flex' }}>
-          <LogOut size={14} />
-        </button>
-      </div>
-    </aside>
-  )
-}
-
-function navStyle(isActive: boolean): React.CSSProperties {
-  return {
-    display: 'flex', alignItems: 'center', gap: 9,
-    padding: '7px 10px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-    textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
-    marginBottom: 1,
-    ...(isActive
-      ? { background: '#2ab695', color: '#fff' }
-      : { background: 'transparent', color: '#666' })
-  }
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      background: '#2ab695', color: '#fff',
-      fontSize: 10, fontWeight: 600, borderRadius: 100,
-      padding: '1px 6px', lineHeight: '16px'
-    }}>{children}</span>
-  )
-}
 
 /* ══════════════════════════════════════════════════════════════════════════
    EMPTY STATE
@@ -617,39 +456,28 @@ export default function Dashboard() {
   }, [user])
 
   const firstName = profile?.first_name ?? 'there'
-  const plan = profile?.plan ?? 'Starter'
 
   return (
     <>
       <style>{`
-        .dashboard-sidebar { display: flex !important; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 979px) {
-          .dashboard-sidebar { display: none !important; }
           .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .body-grid { grid-template-columns: 1fr !important; }
           .feature-grid { grid-template-columns: 1fr !important; }
           .hero-preview { display: none !important; }
         }
       `}</style>
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#f9f9f9' }}>
-        <Sidebar
-          propertiesCount={propertiesCount}
-          leadsCount={leadsCount}
-          profile={profile}
-          plan={plan}
-        />
-        <main style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
-          {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-              <div style={{ width: 24, height: 24, border: '2px solid #e5e7eb', borderTopColor: '#2ab695', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-          ) : propertiesCount === 0 ? (
-            <EmptyState firstName={firstName} />
-          ) : (
-            <ActiveState firstName={firstName} propertiesCount={propertiesCount} leadsCount={leadsCount} />
-          )}
-        </main>
+      <div style={{ background: '#f9f9f9', minHeight: 'calc(100vh - 60px)' }}>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)' }}>
+            <div style={{ width: 24, height: 24, border: '2px solid #e5e7eb', borderTopColor: '#2ab695', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          </div>
+        ) : propertiesCount === 0 ? (
+          <EmptyState firstName={firstName} />
+        ) : (
+          <ActiveState firstName={firstName} propertiesCount={propertiesCount} leadsCount={leadsCount} />
+        )}
       </div>
     </>
   )

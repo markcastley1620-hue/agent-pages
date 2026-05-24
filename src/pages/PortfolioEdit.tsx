@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import '../styles/portfolio-editor.css'
@@ -57,13 +57,10 @@ const LISTING_CLASSES = ['l1', 'l2', 'l3']
 
 export default function PortfolioEdit() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [profile, setProfile] = useState<Partial<Profile>>({})
   const [properties, setProperties] = useState<FeaturedProperty[]>([])
   const [featured, setFeatured] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [savedAt, setSavedAt] = useState<Date | null>(null)
   const [activeTab, setActiveTab] = useState(0)
   const [specialismInput, setSpecialismInput] = useState('')
   const [languageInput, setLanguageInput] = useState('')
@@ -92,19 +89,6 @@ export default function PortfolioEdit() {
       else next.add(id)
       return next
     })
-  }
-
-  async function saveProfile() {
-    if (!user) return
-    setSaving(true)
-    const { error } = await supabase.from('profiles').upsert({ ...profile, id: user.id })
-    setSaving(false)
-    if (!error) setSavedAt(new Date())
-  }
-
-  async function publish() {
-    await saveProfile()
-    if (profile.slug) navigate(`/${profile.slug}`)
   }
 
   function removeSpecialism(s: string) {
@@ -149,37 +133,6 @@ export default function PortfolioEdit() {
 
   return (
     <div className="portfolio-editor-page">
-      {/* TOP BAR */}
-      <div className="topbar">
-        <div className="topbar-left">
-          <div className="topbar-brand">
-            <div className="topbar-logo">a</div>
-            <div className="topbar-name">Agent Pages</div>
-          </div>
-          <div className="topbar-crumb">
-            <Link to="/portfolio/edit">Portfolio</Link>
-            <span className="topbar-crumb-sep">/</span>
-            <span className="topbar-crumb-current">Edit</span>
-          </div>
-        </div>
-        <div className="topbar-right">
-          <div className="topbar-status">Live</div>
-          {savedAt && (
-            <div className="topbar-save-state">
-              <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-              <span>Saved {Math.round((Date.now() - savedAt.getTime()) / 1000)}s ago</span>
-            </div>
-          )}
-          {profile.slug && (
-            <a className="btn btn-outline" href={`/${profile.slug}`} target="_blank" rel="noreferrer">
-              View live
-            </a>
-          )}
-          <button className="btn btn-primary" onClick={publish} disabled={saving}>
-            {saving ? 'Saving…' : 'Publish changes'}
-          </button>
-        </div>
-      </div>
 
       {/* SPLIT */}
       <div className="split">

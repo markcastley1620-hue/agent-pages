@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import Layout, { Breadcrumb } from '../components/Layout'
+
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -110,18 +110,14 @@ export default function PropertyEdit() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center py-24">
-          <div className="w-6 h-6 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center py-24">
+        <div className="w-6 h-6 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
   }
 
   return (
-    <Layout>
-      <div className="p-8 max-w-2xl">
-        <Breadcrumb items={[{ label: 'Properties', to: '/properties' }, { label: form.title, to: `/properties/${id}` }, { label: 'Edit' }]} />
+    <div className="p-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="text-xl font-semibold text-[#1a1a1a] tracking-tight">Edit property</h1>
         </div>
@@ -220,6 +216,5 @@ export default function PropertyEdit() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }
