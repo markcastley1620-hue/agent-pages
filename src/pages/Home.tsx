@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import '../styles/homepage.css'
+import BrandLogo from '../components/BrandLogo'
 
 const faqData = [
   {
@@ -46,7 +47,7 @@ export default function Home() {
       {/* NAV */}
       <nav className="nav">
         <div className="nav-brand">
-          <div className="nav-logo">a</div>
+          <BrandLogo size={28} />
           <div className="nav-name">Agent <span>Pages</span></div>
         </div>
         <div className="nav-links">
@@ -1034,7 +1035,7 @@ export default function Home() {
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <div className="nav-logo">a</div>
+            <BrandLogo size={28} />
             <span>Agent <strong>Pages</strong></span>
           </div>
           <div className="footer-links">

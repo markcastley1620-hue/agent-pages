@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import BrandLogo from '../components/BrandLogo'
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -24,12 +25,7 @@ const CSS = `
     background: var(--paper-warm);
   }
   .login-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-  .login-logo-mark {
-    width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 1px 4px rgba(45,90,79,0.18);
-  }
-  .login-logo-mark span { color: #fff; font-size: 17px; font-weight: 700; line-height: 1; }
+  .login-logo-mark { display: flex; }
   .login-logo-name { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
   .login-topbar-link { font-size: 13.5px; color: var(--muted); text-decoration: none; }
   .login-topbar-link a { color: var(--accent); font-weight: 500; text-decoration: none; }
@@ -40,13 +36,7 @@ const CSS = `
     box-shadow: 0 2px 24px rgba(15,20,25,0.06);
     width: 100%; max-width: 420px; padding: 40px 36px;
   }
-  .login-brand-mark {
-    width: 44px; height: 44px; background: var(--accent); border-radius: 11px;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 2px 8px rgba(45,90,79,0.22);
-    margin-bottom: 20px;
-  }
-  .login-brand-mark span { color: #fff; font-size: 22px; font-weight: 700; line-height: 1; }
+  .login-brand-mark { display: flex; margin-bottom: 20px; }
   .login-eyebrow {
     font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--accent); margin-bottom: 6px;
@@ -160,7 +150,7 @@ export default function Login() {
         {/* Top bar */}
         <div className="login-topbar">
           <a href="/" className="login-logo">
-            <div className="login-logo-mark"><span>a</span></div>
+            <div className="login-logo-mark"><BrandLogo size={32} /></div>
             <span className="login-logo-name">Agent Pages</span>
           </a>
           <span className="login-topbar-link">
@@ -171,7 +161,7 @@ export default function Login() {
         {/* Centered card */}
         <div className="login-center">
           <div className="login-card">
-            <div className="login-brand-mark"><span>a</span></div>
+            <div className="login-brand-mark"><BrandLogo size={44} /></div>
             <div className="login-eyebrow">Welcome Back</div>
             <h1 className="login-title">Sign in to Agent Pages</h1>
             <p className="login-subtitle">Pick up where you left off.</p>

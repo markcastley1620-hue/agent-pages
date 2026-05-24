@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Building2, Users, Settings, LogOut, ChevronRight, Globe } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import BrandLogo from './BrandLogo'
 
 const nav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -24,7 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <aside className="w-56 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
         <div className="px-6 py-5 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-[#c9a84c] rounded" />
+            <BrandLogo size={24} />
             <span className="font-semibold text-[#1a1a1a] text-sm tracking-tight">Agent Pages</span>
           </div>
         </div>

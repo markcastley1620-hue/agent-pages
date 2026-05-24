@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
+import BrandLogo from './BrandLogo'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -66,14 +67,10 @@ export default function AppShell({
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* Logo + wordmark */}
             <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: 7,
-                background: 'var(--accent, #2d5a4f)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0,
-              }}>a</div>
-              <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--ink, #0f1419)', letterSpacing: '-0.015em' }}>
-                Agent Pages
+              <BrandLogo size={26} />
+              <span style={{ fontSize: 14.5, letterSpacing: '-0.015em' }}>
+                <span style={{ fontWeight: 700, color: 'var(--ink, #0f1419)' }}>Agent</span>
+                <span style={{ fontWeight: 400, color: 'var(--muted, #5a6470)', marginLeft: 3 }}>Pages</span>
               </span>
             </Link>
 
