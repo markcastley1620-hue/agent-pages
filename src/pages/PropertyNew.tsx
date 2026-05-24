@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -29,6 +29,11 @@ interface FormState {
   tower: string
   addressInternal: string
   pageTitle: string
+  lat: string
+  lng: string
+  placeId: string
+  locationDisplay: string
+  locationExact: boolean
   // Step 2
   beds: string
   baths: string
@@ -90,6 +95,7 @@ export default function PropertyNew() {
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop')
   const [form, setForm] = useState<FormState>({
     propertyType: '', purpose: '', community: '', subCommunity: '', tower: '', addressInternal: '', pageTitle: '',
+    lat: '', lng: '', placeId: '', locationDisplay: '', locationExact: false,
     beds: '', baths: '', sqft: '', plotSqft: '', price: '',
     feature1: '', feature2: '', feature3: '', feature4: '',
     tone: 'Refined', description: '',
@@ -303,6 +309,11 @@ export default function PropertyNew() {
                   show_sold_pricing: form.showSoldPricing,
                   show_lead_form: form.showLeadForm,
                   show_on_portfolio: form.showOnPortfolio,
+                  lat: form.lat ? parseFloat(form.lat) : null,
+                  lng: form.lng ? parseFloat(form.lng) : null,
+                  place_id: form.placeId || null,
+                  location_display: form.locationDisplay || null,
+                  location_exact: form.locationExact,
                   status: 'published',
                 })
                 navigate('/properties')
@@ -323,6 +334,11 @@ export default function PropertyNew() {
                   sqft: form.sqft ? Number(form.sqft) : null,
                   price: form.price ? Number(form.price) : null,
                   description: form.description,
+                  lat: form.lat ? parseFloat(form.lat) : null,
+                  lng: form.lng ? parseFloat(form.lng) : null,
+                  place_id: form.placeId || null,
+                  location_display: form.locationDisplay || null,
+                  location_exact: form.locationExact,
                 })
                 navigate('/properties')
               }}
@@ -500,6 +516,23 @@ export default function PropertyNew() {
                   }
                 </div>
 
+                {/* Location preview */}
+                {form.lat && form.lng && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--quiet,#8b95a0)', fontWeight: 600, marginBottom: 6 }}>LOCATION</div>
+                    <div style={{ position: 'relative', borderRadius: 6, overflow: 'hidden', marginBottom: 4 }}>
+                      <img
+                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${form.lat},${form.lng}&zoom=15&size=400x150&key=AIzaSyBdZrnGpA6uof-um3fxLH1gu2Y6uoqCwqw&style=feature:all|saturation:-80`}
+                        alt="Location map"
+                        style={{ width: '100%', display: 'block' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: 9.5, color: 'var(--quiet,#8b95a0)', fontStyle: 'italic' }}>
+                      {form.locationExact ? 'Exact location' : 'Approximate location'}
+                    </div>
+                  </div>
+                )}
+
                 {/* Agent block */}
                 <div style={{ background: '#dcfce7', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -632,10 +665,23 @@ function Step1Form({ form, setField, onContinue }: {
         </div>
       </div>
 
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 16 }}>
         <FieldLabel>Address (internal only)</FieldLabel>
         <input className="pnw-input" value={form.addressInternal} onChange={e => setField('addressInternal', e.target.value)} placeholder="e.g. Unit 2304, Tower B…" />
         <FieldHint>Never appears on the public page</FieldHint>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <FieldLabel>Map location</FieldLabel>
+        <MapLocationPicker
+          lat={form.lat}
+          lng={form.lng}
+          locationDisplay={form.locationDisplay}
+          locationExact={form.locationExact}
+          community={form.community}
+          setField={setField}
+        />
+        <FieldHint>Drag the pin to adjust. Buyers see a 200m radius, not the exact pin.</FieldHint>
       </div>
 
       {/* Page title section */}
@@ -1137,6 +1183,153 @@ function Step6Form({ form, setField: _setField, onBack, onPublish, onSaveDraft, 
 
       <div style={{ paddingTop: 8, borderTop: '1px solid var(--line-soft,#f0f2f4)' }}>
         <button onClick={onBack} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1.5px solid var(--line,#e6e8eb)', background: 'transparent', color: 'var(--ink,#0f1419)', fontFamily: 'inherit' }}>← Back to URL &amp; options</button>
+      </div>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MAP LOCATION PICKER
+══════════════════════════════════════════════════════════════ */
+function MapLocationPicker({ lat, lng, locationDisplay, locationExact, community, setField }: {
+  lat: string; lng: string; locationDisplay: string; locationExact: boolean
+  community: string
+  setField: (k: keyof FormState, v: string | boolean | File[]) => void
+}) {
+  const mapDivRef = useRef<HTMLDivElement>(null)
+  const initRef = useRef(false)
+  const mapObjRef = useRef<any>(null)
+  const markerRef = useRef<any>(null)
+  const geocoderRef = useRef<any>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const setFieldRef = useRef(setField)
+  setFieldRef.current = setField
+
+  // Poll until Google Maps SDK is ready
+  const [googleReady, setGoogleReady] = useState(!!(window as any).google?.maps)
+  useEffect(() => {
+    if (googleReady) return
+    const iv = setInterval(() => {
+      if ((window as any).google?.maps) { setGoogleReady(true); clearInterval(iv) }
+    }, 300)
+    return () => clearInterval(iv)
+  }, [googleReady])
+
+  // Initialize map once SDK is ready
+  useEffect(() => {
+    if (!googleReady || !mapDivRef.current || initRef.current) return
+    initRef.current = true
+    const g = (window as any).google
+    const initLat = lat ? parseFloat(lat) : 25.2048
+    const initLng = lng ? parseFloat(lng) : 55.2708
+
+    const map = new g.maps.Map(mapDivRef.current, {
+      center: { lat: initLat, lng: initLng },
+      zoom: lat ? 15 : 11,
+      disableDefaultUI: true,
+      zoomControl: true,
+      mapTypeControl: false,
+    })
+    mapObjRef.current = map
+    geocoderRef.current = new g.maps.Geocoder()
+
+    const marker = new g.maps.Marker({
+      position: { lat: initLat, lng: initLng },
+      map,
+      draggable: true,
+    })
+    markerRef.current = marker
+
+    marker.addListener('dragend', () => {
+      const pos = marker.getPosition()
+      const lv = pos.lat(), lnv = pos.lng()
+      setFieldRef.current('lat', lv.toFixed(6))
+      setFieldRef.current('lng', lnv.toFixed(6))
+      geocoderRef.current?.geocode({ location: { lat: lv, lng: lnv } }, (results: any, status: string) => {
+        if (status === 'OK' && results?.[0]) {
+          setFieldRef.current('locationDisplay', results[0].formatted_address)
+        }
+      })
+    })
+
+    if (searchRef.current) {
+      const ac = new g.maps.places.Autocomplete(searchRef.current, {
+        componentRestrictions: { country: 'ae' },
+      })
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace()
+        if (!place.geometry?.location) return
+        const lv = place.geometry.location.lat()
+        const lnv = place.geometry.location.lng()
+        map.setCenter({ lat: lv, lng: lnv })
+        map.setZoom(15)
+        marker.setPosition({ lat: lv, lng: lnv })
+        setFieldRef.current('lat', lv.toFixed(6))
+        setFieldRef.current('lng', lnv.toFixed(6))
+        setFieldRef.current('placeId', place.place_id || '')
+        setFieldRef.current('locationDisplay', place.formatted_address || place.name || '')
+      })
+    }
+  }, [googleReady]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-center when agent types a community (only if lat not manually set)
+  useEffect(() => {
+    if (!googleReady || !community || community.length < 3 || lat || !mapObjRef.current) return
+    const g = (window as any).google
+    if (!g?.maps?.places) return
+    const svc = new g.maps.places.PlacesService(mapObjRef.current)
+    svc.findPlaceFromQuery(
+      { query: `${community}, Dubai, UAE`, fields: ['geometry'] },
+      (results: any, status: string) => {
+        if (status === g.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry?.location) {
+          const loc = results[0].geometry.location
+          mapObjRef.current?.panTo(loc)
+          mapObjRef.current?.setZoom(13)
+          markerRef.current?.setPosition(loc)
+        }
+      }
+    )
+  }, [community, googleReady, lat])
+
+  return (
+    <div>
+      <div style={{ position: 'relative', height: 280, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--line,#e6e8eb)', background: '#f0f2f4' }}>
+        <div ref={mapDivRef} style={{ width: '100%', height: '100%' }} />
+        {!googleReady && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f4f2', fontSize: 13, color: 'var(--muted,#5a6470)' }}>
+            Loading map…
+          </div>
+        )}
+        <div style={{ position: 'absolute', top: 10, left: 10, right: 50, zIndex: 1 }}>
+          <input
+            ref={searchRef}
+            className="pnw-input"
+            placeholder="Search UAE location…"
+            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.97)', fontSize: 13 }}
+          />
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: 'var(--muted,#5a6470)', fontFamily: 'monospace', flexShrink: 0 }}>
+          {lat && lng ? `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}` : '—, —'}
+        </span>
+        {locationDisplay && (
+          <span style={{ fontSize: 11.5, color: 'var(--muted,#5a6470)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {locationDisplay}
+          </span>
+        )}
+        <div
+          onClick={() => setField('locationExact', !locationExact)}
+          style={{
+            padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: locationExact ? '#dcfce7' : 'var(--accent-soft,#e8f0ed)',
+            color: locationExact ? '#15803d' : 'var(--accent,#2d5a4f)',
+            border: '1.5px solid', borderColor: locationExact ? '#b6e8d5' : 'transparent',
+            transition: 'all .15s',
+          }}
+        >
+          {locationExact ? 'Exact location' : 'Approximate location'}
+        </div>
       </div>
     </div>
   )

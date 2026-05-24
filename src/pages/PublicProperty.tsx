@@ -13,6 +13,7 @@ interface Property {
   description_full: string | null; feature_highlights: {title:string;sub:string}[] | null
   amenities: string[] | null; hero_photo_url: string | null; gallery_urls: string[] | null
   dld_permit_number: string | null; rera_disclosure: boolean
+  lat: number | null; lng: number | null; location_display: string | null; location_exact: boolean | null
 }
 interface Profile {
   id: string; display_name: string; slug: string; headline: string | null
@@ -321,9 +322,32 @@ export default function PublicProperty() {
             </div>
 
             {/* Location */}
-            {(property.address_line || property.community) && (
+            {property.lat && property.lng ? (
               <div className="section">
-                <h2 className="section-title">Where it sits</h2>
+                <div style={{fontSize:'11px',letterSpacing:'0.1em',textTransform:'uppercase',color:'#999',fontWeight:600,marginBottom:'12px'}}>LOCATION</div>
+                <div style={{position:'relative',height:'300px',borderRadius:'12px',overflow:'hidden',marginBottom:'12px'}}>
+                  <img
+                    src={`https://maps.googleapis.com/maps/api/staticmap?center=${property.lat},${property.lng}&zoom=15&size=800x300&scale=2&key=AIzaSyBdZrnGpA6uof-um3fxLH1gu2Y6uoqCwqw&style=feature:all|saturation:-80${property.location_exact ? `&markers=color:0x2d5a4f%7C${property.lat},${property.lng}` : ''}`}
+                    alt="Property location map"
+                    style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
+                  />
+                  {!property.location_exact && (
+                    <div style={{
+                      position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+                      width:'120px',height:'120px',borderRadius:'50%',
+                      background:'rgba(45,90,79,0.15)',
+                      border:'2px solid rgba(45,90,79,0.4)',
+                      pointerEvents:'none',
+                    }} />
+                  )}
+                </div>
+                {property.location_display && (
+                  <div style={{fontSize:'13px',color:'#6e6e6e'}}>{property.location_display}</div>
+                )}
+              </div>
+            ) : (property.address_line || property.community) ? (
+              <div className="section">
+                <div style={{fontSize:'11px',letterSpacing:'0.1em',textTransform:'uppercase',color:'#999',fontWeight:600,marginBottom:'12px'}}>LOCATION</div>
                 <div className="map-placeholder">
                   <div className="map-grid" />
                   <div className="map-pin">
@@ -332,7 +356,7 @@ export default function PublicProperty() {
                 </div>
                 <div style={{fontSize:'14px',color:'#1a1a1a',fontWeight:500}}>{property.address_line || [property.tower, property.community].filter(Boolean).join(', ')}</div>
               </div>
-            )}
+            ) : null}
 
             {/* Agent */}
             <div>
