@@ -16,6 +16,7 @@ import Analytics from './pages/Analytics'
 import PublicPortfolio from './pages/PublicPortfolio'
 import PublicProperty from './pages/PublicProperty'
 import Home from './pages/Home'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -119,6 +120,13 @@ export default function App() {
             <AppShell activeNav="analytics">
               <Analytics />
             </AppShell>
+          </ProtectedRoute>
+        } />
+
+        {/* Admin */}
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <Admin />
           </ProtectedRoute>
         } />
 

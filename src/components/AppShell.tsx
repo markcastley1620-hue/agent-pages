@@ -3,6 +3,8 @@ import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
 import BrandLogo from './BrandLogo'
 
+const ADMIN_EMAILS = ['test-agent@agentpages.io', 'mark@activateos.com', 'mark@chatdxb.com']
+
 interface AppShellProps {
   children: React.ReactNode
   activeNav?: 'dashboard' | 'properties' | 'leads' | 'portfolio' | 'analytics' | 'settings'
@@ -138,6 +140,28 @@ export default function AppShell({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {rightActions}
               </div>
+            )}
+
+            {/* Admin link — only for admin emails */}
+            {user && ADMIN_EMAILS.includes(user.email || '') && (
+              <Link
+                to="/admin"
+                title="Admin Panel"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 10px', borderRadius: 7,
+                  border: '1px solid #fee2e2', background: '#fef2f2',
+                  color: '#dc2626', fontSize: 12, fontWeight: 600,
+                  textDecoration: 'none', transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fee2e2'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#fef2f2'}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Admin
+              </Link>
             )}
 
             {/* Bell */}
