@@ -44,16 +44,16 @@ export default function PublicProperty() {
   useEffect(() => {
     if (!agentSlug || !propertySlug) return
     ;(async () => {
-      const { data: ag } = await supabase.schema('agent_pages').from('profiles').select('*').eq('slug', agentSlug).single()
+      const { data: ag } = await supabase.from('profiles').select('*').eq('slug', agentSlug).single()
       if (!ag) { setLoading(false); return }
       setAgent(ag)
-      const { data: prop } = await supabase.schema('agent_pages').from('properties').select('*').eq('agent_id', ag.id).eq('slug', propertySlug).eq('status', 'live').single()
+      const { data: prop } = await supabase.from('properties').select('*').eq('agent_id', ag.id).eq('slug', propertySlug).eq('status', 'live').single()
       if (prop) {
         setProperty(prop)
         const photos = [prop.hero_photo_url, ...(prop.gallery_urls || [])].filter(Boolean) as string[]
         setAllPhotos(photos)
         // fire-and-forget view track
-        supabase.schema('agent_pages').from('page_views').insert({ agent_id: ag.id, property_id: prop.id, page_type: 'property', referrer: document.referrer || null, device: window.innerWidth < 768 ? 'mobile' : 'desktop' }).then(() => {})
+        supabase.from('page_views').insert({ agent_id: ag.id, property_id: prop.id, page_type: 'property', referrer: document.referrer || null, device: window.innerWidth < 768 ? 'mobile' : 'desktop' }).then(() => {})
       }
       setLoading(false)
     })()
@@ -63,7 +63,7 @@ export default function PublicProperty() {
     e.preventDefault()
     if (!agent || !property) return
     setStatus('sending')
-    const { error } = await supabase.schema('agent_pages').from('leads').insert({ agent_id: agent.id, property_id: property.id, source: 'property_page', ...form, page_url: window.location.href, referrer: document.referrer || null, device: window.innerWidth < 768 ? 'mobile' : 'desktop' })
+    const { error } = await supabase.from('leads').insert({ agent_id: agent.id, property_id: property.id, source: 'property_page', ...form, page_url: window.location.href, referrer: document.referrer || null, device: window.innerWidth < 768 ? 'mobile' : 'desktop' })
     setStatus(error ? 'error' : 'sent')
   }
 
