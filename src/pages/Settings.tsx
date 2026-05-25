@@ -19,6 +19,20 @@ const COLORS = [
   { id: 'violet', label: 'Violet', hex: '#5b21b6' },
   { id: 'slate', label: 'Slate', hex: '#334155' },
   { id: 'rose', label: 'Rose', hex: '#9f1239' },
+  { id: 'teal', label: 'Teal', hex: '#0d9488' },
+  { id: 'indigo', label: 'Indigo', hex: '#4f46e5' },
+  { id: 'fuchsia', label: 'Fuchsia', hex: '#a21caf' },
+  { id: 'orange', label: 'Orange', hex: '#ea580c' },
+  { id: 'cyan', label: 'Cyan', hex: '#0891b2' },
+  { id: 'lime', label: 'Lime', hex: '#65a30d' },
+  { id: 'pink', label: 'Pink', hex: '#db2777' },
+  { id: 'gold', label: 'Gold', hex: '#b08f3a' },
+  { id: 'charcoal', label: 'Charcoal', hex: '#1c1917' },
+  { id: 'sky', label: 'Sky', hex: '#0284c7' },
+  { id: 'forest', label: 'Forest', hex: '#166534' },
+  { id: 'burgundy', label: 'Burgundy', hex: '#7f1d1d' },
+  { id: 'cobalt', label: 'Cobalt', hex: '#1d4ed8' },
+  { id: 'coral', label: 'Coral', hex: '#ef4444' },
 ]
 
 const LANGUAGES = ['English', 'Arabic', 'French', 'Russian', 'Chinese', 'Hindi', 'Urdu']
@@ -34,6 +48,7 @@ interface Profile {
   rera_number: string
   orn: string
   accent_color: string
+  custom_color?: string
   slug: string
   phone: string
   email: string
@@ -41,7 +56,7 @@ interface Profile {
   areas: string[]
   photo_url: string
   brokerage_logo_url: string
-  whatsapp_alerts: boolean
+  hide_brokerage: boolean
   email_alerts: boolean
   push_alerts: boolean
 }
@@ -133,7 +148,23 @@ function SectionProfile({ profile, update, onSave, saving, saved }: { profile: P
               </div>
             </div>
             <div>
-              <button type="button" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1.5px solid #e6e8eb', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: '#fff', color: '#0f1419', fontFamily: 'Inter, sans-serif', marginBottom: 6 }}>
+              <button type="button" onClick={() => {
+                const fileInput = document.createElement('input')
+                fileInput.type = 'file'
+                fileInput.accept = 'image/*'
+                fileInput.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0]
+                  if (!file) return
+                  const ext = file.name.split('.').pop()
+                  const path = `avatars/${profile.id}.${ext}`
+                  const { error } = await supabase.storage.from('agent-assets').upload(path, file, { upsert: true })
+                  if (!error) {
+                    const { data: { publicUrl } } = supabase.storage.from('agent-assets').getPublicUrl(path)
+                    update('photo_url', publicUrl)
+                  }
+                }
+                fileInput.click()
+              }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1.5px solid #e6e8eb', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: '#fff', color: '#0f1419', fontFamily: 'Inter, sans-serif', marginBottom: 6 }}>
                 <Upload size={13} /> Change photo
               </button>
               <div style={{ fontSize: 11.5, color: '#8b95a0' }}>Square JPG or PNG, max 5MB</div>
@@ -167,13 +198,36 @@ function SectionProfile({ profile, update, onSave, saving, saved }: { profile: P
             <div style={{ width: 64, height: 40, borderRadius: 8, background: '#f0f2f4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Building2 size={18} color="#8b95a0" />
             </div>
-            <button type="button" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1.5px solid #e6e8eb', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: '#fff', color: '#0f1419', fontFamily: 'Inter, sans-serif' }}>
+            <button type="button" onClick={() => {
+                const fileInput = document.createElement('input')
+                fileInput.type = 'file'
+                fileInput.accept = 'image/*'
+                fileInput.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0]
+                  if (!file) return
+                  const ext = file.name.split('.').pop()
+                  const path = `logos/${profile.id}.${ext}`
+                  const { error } = await supabase.storage.from('agent-assets').upload(path, file, { upsert: true })
+                  if (!error) {
+                    const { data: { publicUrl } } = supabase.storage.from('agent-assets').getPublicUrl(path)
+                    update('brokerage_logo_url', publicUrl)
+                  }
+                }
+                fileInput.click()
+              }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1.5px solid #e6e8eb', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: '#fff', color: '#0f1419', fontFamily: 'Inter, sans-serif' }}>
               <Upload size={13} /> Upload brokerage logo
             </button>
           </div>
           <Field label="Brokerage name">
             <input value={profile.brokerage_name} onChange={e => update('brokerage_name', e.target.value)} style={inputStyle} placeholder="Luxury Properties LLC" />
           </Field>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f0f2f4', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 500, color: '#0f1419' }}>Hide brokerage info on public pages</div>
+              <div style={{ fontSize: 12, color: '#8b95a0', marginTop: 1 }}>Hides brokerage name and logo from your portfolio page</div>
+            </div>
+            <Toggle value={profile.hide_brokerage} onChange={v => update('hide_brokerage', v)} />
+          </div>
           <div style={{ display: 'flex', gap: 16 }}>
             <Field label="RERA BRN" half>
               <input value={profile.rera_number} onChange={e => update('rera_number', e.target.value)} style={inputStyle} placeholder="12345" />
@@ -191,7 +245,7 @@ function SectionProfile({ profile, update, onSave, saving, saved }: { profile: P
         <div style={{ padding: '20px' }}>
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#5a6470', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Accent colour</label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {COLORS.map(c => {
                 const active = profile.accent_color === c.id
                 return (
@@ -200,6 +254,13 @@ function SectionProfile({ profile, update, onSave, saving, saved }: { profile: P
                   </button>
                 )
               })}
+              <input
+                type="color"
+                title="Custom color"
+                value={profile.custom_color ?? '#000000'}
+                onChange={e => { update('custom_color', e.target.value); update('accent_color', 'custom') }}
+                style={{ width: 32, height: 32, borderRadius: 8, border: profile.accent_color === 'custom' ? '3px solid #555' : '1.5px solid #e6e8eb', cursor: 'pointer', padding: 2, background: '#fff' }}
+              />
             </div>
           </div>
           <Field label="Your page URL">
@@ -305,6 +366,25 @@ function SectionAppearance({ profile, update, onSave, saving, saved }: { profile
               </div>
             ))}
           </div>
+          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#5a6470', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Custom hex</label>
+            <input
+              type="color"
+              value={profile.custom_color ?? '#000000'}
+              onChange={e => { update('custom_color', e.target.value); update('accent_color', 'custom') }}
+              style={{ width: 36, height: 36, border: '1.5px solid #e6e8eb', borderRadius: 8, cursor: 'pointer', padding: 2, background: '#fff' }}
+            />
+            <input
+              type="text"
+              placeholder="#1a2b3c"
+              value={profile.accent_color === 'custom' ? (profile.custom_color ?? '') : ''}
+              onChange={e => { const v = e.target.value; update('custom_color', v); if (/^#[0-9a-fA-F]{6}$/.test(v)) update('accent_color', 'custom') }}
+              style={{ ...inputStyle, width: 110 }}
+            />
+            {profile.accent_color === 'custom' && profile.custom_color && (
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: profile.custom_color, border: '2px solid #e6e8eb', flexShrink: 0 }} />
+            )}
+          </div>
         </div>
       </SectionCard>
       <SaveBar saving={saving} saved={saved} onSave={onSave} />
@@ -407,13 +487,12 @@ function SectionLeads({ profile, update, onSave, saving, saved }: { profile: Pro
         <SectionHead title="Notification channels" desc="Choose how you receive lead alerts" />
         <div style={{ padding: '20px' }}>
           {[
-            { key: 'whatsapp_alerts', label: 'WhatsApp alerts', desc: 'Instant message for every new lead', icon: '💬' },
-            { key: 'email_alerts', label: 'Email digest', desc: 'Daily summary of all leads', icon: '📧' },
-            { key: 'push_alerts', label: 'Browser push', desc: 'Desktop notifications (when online)', icon: '🔔' },
-          ].map(({ key, label, desc, icon }) => {
+            { key: 'push_alerts', label: 'Push notification', desc: 'Instant alerts via the app (requires PWA install)', icon: '🔔' },
+            { key: 'email_alerts', label: 'Email notification', desc: 'HTML email alert for every new lead', icon: '📧' },
+          ].map(({ key, label, desc, icon }, idx, arr) => {
             const val = profile[key as keyof Profile] as boolean
             return (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', padding: '14px 0', borderBottom: key !== 'push_alerts' ? '1px solid #f0f2f4' : 'none' }}>
+              <div key={key} style={{ display: 'flex', alignItems: 'center', padding: '14px 0', borderBottom: idx < arr.length - 1 ? '1px solid #f0f2f4' : 'none' }}>
                 <span style={{ fontSize: 20, marginRight: 14 }}>{icon}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 500, color: '#0f1419' }}>{label}</div>
@@ -683,7 +762,7 @@ export default function Settings() {
     accent_color: 'emerald', slug: '', phone: '', email: '',
     languages: [], areas: [],
     photo_url: '', brokerage_logo_url: '',
-    whatsapp_alerts: true, email_alerts: true, push_alerts: false,
+    hide_brokerage: false, email_alerts: true, push_alerts: false,
   })
 
   useEffect(() => {
@@ -707,7 +786,7 @@ export default function Settings() {
           areas: data.areas ?? [],
           photo_url: data.photo_url ?? '',
           brokerage_logo_url: data.brokerage_logo_url ?? '',
-          whatsapp_alerts: data.whatsapp_alerts ?? true,
+          hide_brokerage: data.hide_brokerage ?? false,
           email_alerts: data.email_alerts ?? true,
           push_alerts: data.push_alerts ?? false,
         }))
@@ -738,7 +817,7 @@ export default function Settings() {
       email: profile.email,
       languages: profile.languages,
       areas: profile.areas,
-      whatsapp_alerts: profile.whatsapp_alerts,
+      hide_brokerage: profile.hide_brokerage,
       email_alerts: profile.email_alerts,
       push_alerts: profile.push_alerts,
     })
