@@ -202,11 +202,11 @@ export default function PropertyNew() {
 
         .pnw-grid {
           display: grid;
-          grid-template-columns: 240px 1fr 480px;
+          grid-template-columns: 240px 1fr 560px;
           min-height: calc(100vh - 60px);
         }
         @media (max-width: 1279px) {
-          .pnw-grid { grid-template-columns: 220px 1fr 420px; }
+          .pnw-grid { grid-template-columns: 220px 1fr 500px; }
         }
         @media (max-width: 1099px) {
           .pnw-grid { grid-template-columns: 200px 1fr; }
@@ -313,7 +313,7 @@ export default function PropertyNew() {
 
         {/* ── MIDDLE: Form ── */}
         <main style={{ padding: '40px 48px 120px', overflowY: 'auto', background: 'var(--paper-warm,#fbfaf7)' }}>
-          <div style={{ maxWidth: 600 }}>
+          <div style={{ maxWidth: 720 }}>
             {step === 1 && <Step1Form form={form} setField={setField} onContinue={() => setStep(2)} />}
             {step === 2 && <Step2Form form={form} setField={setField} onBack={() => setStep(1)} onContinue={() => setStep(3)} />}
             {step === 3 && <Step3Form form={form} setField={setField} onBack={() => setStep(2)} onContinue={() => setStep(4)} />}
