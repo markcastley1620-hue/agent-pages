@@ -34,17 +34,27 @@ interface ProgressStep {
   status: 'complete' | 'active' | 'pending'
 }
 
-// ── Mock data ──────────────────────────────────────────────────────────────────
-const MOCK_RESULTS: DomainResult[] = [
-  { name: 'sarahjohnson',  tld: '.ae',    price: 'AED 89',  available: true,  recommended: true  },
-  { name: 'sarahjohnson',  tld: '.com',   price: 'AED 49',  available: true                      },
-  { name: 'sarahjohnson',  tld: '.estate',price: 'AED 129', available: true                      },
-  { name: 'sarahjohnson',  tld: '.homes', price: 'AED 149', available: true                      },
-  { name: 'sarahjohnson',  tld: '.realty',price: 'AED 169', available: false                     },
-  { name: 'sarahjohnson',  tld: '.co',    price: 'AED 69',  available: true                      },
-]
+// ── TLD pricing (approximate Cloudflare wholesale in AED) ─────────────────────
+const TLD_PRICES: Record<string, string> = {
+  '.com': 'AED 44', '.ae': 'AED 165', '.co': 'AED 100', '.io': 'AED 140',
+  '.realestate': 'AED 160', '.properties': 'AED 160', '.homes': 'AED 120',
+  '.estate': 'AED 129', '.realty': 'AED 169', '.casa': 'AED 60',
+}
 
-const TLDS = ['.ae', '.com', '.homes', '.estate', '.realty', '.co', '.properties']
+const TLDS = ['.com', '.ae', '.co', '.io', '.realestate', '.properties', '.homes', '.estate']
+
+async function checkDomainAvailability(name: string, tld: string): Promise<boolean> {
+  try {
+    const domain = `${name}${tld}`
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=NS`)
+    const data = await res.json()
+    // If there are NS Answer records, domain is taken
+    // Also check Authority for SOA (some registered domains don't have NS in Answer)
+    return !data.Answer && !data.Authority?.some((r: any) => r.type === 2)
+  } catch {
+    return false // assume taken on error
+  }
+}
 
 const INITIAL_STEPS: ProgressStep[] = [
   { id: 'reserve',    label: 'Reserving domain',        sublabel: 'Checking availability with registry…',             status: 'active'  },
@@ -148,14 +158,27 @@ function SearchState({
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return
     setSearching(true)
-    // Simulate async domain lookup
-    await new Promise(r => setTimeout(r, 900))
     const base = query.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
-    const res: DomainResult[] = MOCK_RESULTS.map(r => ({
-      ...r,
-      name: base,
-    })).filter(r => activeTlds.includes(r.tld) || activeTlds.length === 0)
-    setResults(res)
+    const tldsToCheck = activeTlds.length > 0 ? activeTlds : TLDS
+    const checks = await Promise.all(
+      tldsToCheck.map(async (tld) => {
+        const available = await checkDomainAvailability(base, tld)
+        return {
+          name: base,
+          tld,
+          price: TLD_PRICES[tld] || 'AED 99',
+          available,
+          recommended: tld === '.com' && available,
+        } as DomainResult
+      })
+    )
+    // Sort: available first, then by recommended, then by price
+    checks.sort((a, b) => {
+      if (a.available !== b.available) return a.available ? -1 : 1
+      if (a.recommended !== b.recommended) return a.recommended ? -1 : 1
+      return 0
+    })
+    setResults(checks)
     setSearched(true)
     setSearching(false)
   }, [query, activeTlds])
