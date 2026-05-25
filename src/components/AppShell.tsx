@@ -37,8 +37,9 @@ export default function AppShell({
   breadcrumb,
   rightActions,
 }: AppShellProps) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
   const initials = getInitials(user?.email)
 
   return (
@@ -186,14 +187,55 @@ export default function AppShell({
               }} />
             </button>
 
-            {/* Avatar */}
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--accent, #2d5a4f), #1d4030)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            }}>
-              {initials}
+            {/* Avatar + dropdown */}
+            <div style={{ position: 'relative' }}>
+              <div
+                onClick={() => setAvatarMenuOpen(o => !o)}
+                style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--accent, #2d5a4f), #1d4030)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                }}
+              >
+                {initials}
+              </div>
+              {avatarMenuOpen && (
+                <>
+                  <div onClick={() => setAvatarMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 98 }} />
+                  <div style={{
+                    position: 'absolute', top: 40, right: 0, width: 200,
+                    background: '#fff', border: '1px solid #e6e8eb', borderRadius: 10,
+                    boxShadow: '0 8px 24px rgba(15,20,25,0.1)', zIndex: 99,
+                    padding: '6px', overflow: 'hidden',
+                  }}>
+                    <div style={{ padding: '10px 12px', borderBottom: '1px solid #f0f2f4', marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1419' }}>{user?.email?.split('@')[0]}</div>
+                      <div style={{ fontSize: 11, color: '#8b95a0' }}>{user?.email}</div>
+                    </div>
+                    {[{ label: 'Settings', to: '/settings' }, { label: 'Domain', to: '/settings/domain' }].map(item => (
+                      <Link key={item.to} to={item.to} onClick={() => setAvatarMenuOpen(false)} style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                        fontSize: 13, fontWeight: 500, color: '#2c343d', textDecoration: 'none',
+                        borderRadius: 6, transition: 'background 0.1s',
+                      }} onMouseEnter={e => (e.currentTarget.style.background = '#f0f2f4')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        {item.label}
+                      </Link>
+                    ))}
+                    <div style={{ height: 1, background: '#f0f2f4', margin: '4px 0' }} />
+                    <button onClick={() => { setAvatarMenuOpen(false); signOut() }} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', width: '100%',
+                      fontSize: 13, fontWeight: 500, color: '#c2603a', background: 'transparent',
+                      border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                      transition: 'background 0.1s', textAlign: 'left',
+                    }} onMouseEnter={e => (e.currentTarget.style.background = '#fbeee7')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      Log out
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Hamburger */}
