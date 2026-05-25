@@ -268,9 +268,7 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="help-row">
-            Trouble signing in? <a href="/help">Get help</a>
-          </div>
+
         </div>
       </div>
     </>
