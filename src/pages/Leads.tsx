@@ -212,7 +212,7 @@ function AddLeadDrawer({ open, onClose, onSaved, userId, properties }: AddLeadDr
     const fullPhone = `${form.countryCode}${form.phone.trim()}`
     const fullName = [form.firstName.trim(), form.lastName.trim()].filter(Boolean).join(' ')
 
-    const { error } = await supabase.schema('agent_pages').from('leads').insert({
+    const { error } = await supabase.from('leads').insert({
       user_id: userId,
       first_name: form.firstName.trim(),
       last_name: form.lastName.trim() || null,

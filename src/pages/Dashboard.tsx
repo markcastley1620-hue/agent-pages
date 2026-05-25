@@ -578,7 +578,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     Promise.all([
-      supabase.schema('agent_pages').from('profiles').select('first_name, last_name, email, plan').eq('id', user.id).single(),
+      supabase.from('profiles').select('first_name, last_name, email, plan').eq('id', user.id).single(),
       supabase.from('properties').select('id', { count: 'exact' }).eq('agent_id', user.id),
       supabase.from('leads').select('id', { count: 'exact' }).eq('agent_id', user.id),
     ]).then(([p, props, leads]) => {
