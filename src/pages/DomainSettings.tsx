@@ -7,8 +7,8 @@ import {
   Copy, Trash2, User, CreditCard, Settings,
 } from 'lucide-react'
 // supabase imported for future API calls
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { supabase as _supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
 import '../styles/domain-settings.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -708,38 +708,85 @@ function ByoDomain({ onBack }: { onBack: () => void }) {
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function DomainSettings() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [state, setPageState] = useState<PageState>('empty')
   const [byoMode, setByoMode] = useState(false)
   const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null)
-
-  // For demo: allow cycling through states via URL hash
-  useEffect(() => {
-    const hash = window.location.hash
-    if (hash === '#live') {
-      setSelectedDomain({ name: 'sarahjohnson', tld: '.ae', price: 'AED 89', available: true })
-      setPageState('live')
-    }
-  }, [])
 
   const handleSelectDomain = (domain: DomainResult) => {
     setSelectedDomain(domain)
     setPageState('confirm')
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (!selectedDomain || !user) return
     setPageState('progress')
+    // Save domain reservation to Supabase
+    const fullDomain = `${selectedDomain.name}${selectedDomain.tld}`
+    try {
+      await supabase.from('workspace_domains').upsert({
+        agent_id: user.id,
+        domain: fullDomain,
+        source: 'cloudflare_registrar',
+        status: 'pending',
+        auto_renew: true,
+        whois_privacy: true,
+        registration_price_usd: parseFloat(selectedDomain.price.replace(/[^0-9.]/g, '')) / 3.67,
+      }, { onConflict: 'domain' })
+    } catch (e) {
+      console.error('Failed to save domain:', e)
+    }
   }
 
-  const handleProgressComplete = () => {
+  const handleProgressComplete = async () => {
+    if (!selectedDomain || !user) { setPageState('live'); return }
+    const fullDomain = `${selectedDomain.name}${selectedDomain.tld}`
+    // Mark as live (actual Cloudflare registration will be wired later)
+    try {
+      await supabase.from('workspace_domains')
+        .update({ status: 'live', registered_at: new Date().toISOString() })
+        .eq('agent_id', user.id)
+        .eq('domain', fullDomain)
+    } catch (e) {
+      console.error('Failed to update domain status:', e)
+    }
     setPageState('live')
   }
 
-  const handleRemoveDomain = () => {
-    if (window.confirm('Remove your custom domain? Your portfolio will revert to your agentpages.io URL.')) {
-      setSelectedDomain(null)
-      setByoMode(false)
-      setPageState('empty')
+  // Load saved domain on mount
+  useEffect(() => {
+    if (!user) return
+    supabase.from('workspace_domains')
+      .select('*')
+      .eq('agent_id', user.id)
+      .eq('status', 'live')
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          const parts = data.domain.match(/^([^.]+)(\..+)$/)
+          if (parts) {
+            setSelectedDomain({
+              name: parts[1],
+              tld: parts[2],
+              price: TLD_PRICES[parts[2]] || 'AED 99',
+              available: true,
+            })
+            setPageState('live')
+          }
+        }
+      })
+  }, [user])
+
+  const handleRemoveDomain = async () => {
+    if (!window.confirm('Remove your custom domain? Your portfolio will revert to your agentpages.io URL.')) return
+    if (user && selectedDomain) {
+      const fullDomain = `${selectedDomain.name}${selectedDomain.tld}`
+      await supabase.from('workspace_domains').delete().eq('agent_id', user.id).eq('domain', fullDomain)
     }
+    setSelectedDomain(null)
+    setByoMode(false)
+    setPageState('empty')
   }
 
   const renderContent = () => {
@@ -825,55 +872,6 @@ export default function DomainSettings() {
                 </span>
               </div>
             )}
-          </div>
-
-          {/* Demo state switcher (dev helper) */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-            {(['empty', 'search', 'confirm', 'progress', 'live'] as PageState[]).map(s => (
-              <button
-                key={s}
-                onClick={() => {
-                  if (s === 'confirm' || s === 'progress' || s === 'live') {
-                    setSelectedDomain({ name: 'sarahjohnson', tld: '.ae', price: 'AED 89', available: true })
-                  }
-                  setByoMode(false)
-                  setPageState(s)
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif',
-                  border: '1px solid var(--border)',
-                  background: state === s ? 'var(--accent-light)' : 'var(--surface)',
-                  color: state === s ? 'var(--accent)' : 'var(--ink-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                {s}
-              </button>
-            ))}
-            <button
-              onClick={() => { setByoMode(true); setPageState('empty') }}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 6,
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif',
-                border: '1px solid var(--border)',
-                background: byoMode ? 'var(--accent-light)' : 'var(--surface)',
-                color: byoMode ? 'var(--accent)' : 'var(--ink-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              byo
-            </button>
           </div>
 
           {renderContent()}
