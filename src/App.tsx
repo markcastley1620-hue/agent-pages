@@ -17,6 +17,7 @@ import PublicPortfolio from './pages/PublicPortfolio'
 import PublicProperty from './pages/PublicProperty'
 import Home from './pages/Home'
 import Admin from './pages/Admin'
+import DomainSettings from './pages/DomainSettings'
 
 export default function App() {
   return (
@@ -111,6 +112,14 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <Onboarding />
+            </AppShell>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/settings/domain" element={
+          <ProtectedRoute>
+            <AppShell activeNav="settings">
+              <DomainSettings />
             </AppShell>
           </ProtectedRoute>
         } />

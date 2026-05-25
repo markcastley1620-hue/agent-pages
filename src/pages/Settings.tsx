@@ -70,6 +70,7 @@ const NAV_SECTIONS = [
   { id: 'leads', label: 'Lead alerts', icon: Bell },
   { id: 'email-prefs', label: 'Email prefs', icon: Mail },
   { id: 'team', label: 'Team members', icon: Users },
+  { id: 'domain', label: 'Domain', icon: Globe },
   { id: 'integrations', label: 'Integrations', icon: Zap },
   { id: 'api', label: 'API', icon: Key },
   { id: 'rera', label: 'RERA compliance', icon: Building2 },
@@ -873,7 +874,7 @@ export default function Settings() {
                 return (
                   <button
                     key={id}
-                    onClick={() => setActiveSection(id)}
+                    onClick={() => { if (id === 'domain') { navigate('/settings/domain'); return; } setActiveSection(id); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer', background: active ? '#e8f0ed' : 'transparent', color: active ? '#2d5a4f' : '#5a6470', border: 'none', fontFamily: 'Inter, sans-serif', textAlign: 'left', width: '100%', transition: 'all 0.12s' }}
                   >
                     <Icon size={14} />
