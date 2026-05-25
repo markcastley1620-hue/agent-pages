@@ -350,7 +350,7 @@ function ProgressState({ domain, onComplete }: { domain: DomainResult; onComplet
 
   useEffect(() => {
     let idx = 0
-    const intervals = [1200, 1800, 2200, 2400]
+    const intervals = [1200, 1800, 2200, 2400, 1500]
 
     const advance = () => {
       idx++
@@ -366,9 +366,7 @@ function ProgressState({ domain, onComplete }: { domain: DomainResult; onComplet
           return { ...step, status: 'pending' }
         })
       )
-      if (idx < intervals.length) {
-        setTimeout(advance, intervals[idx])
-      }
+      setTimeout(advance, intervals[idx] || 1500)
     }
 
     const timer = setTimeout(advance, intervals[0])
