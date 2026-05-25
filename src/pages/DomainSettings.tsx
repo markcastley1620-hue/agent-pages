@@ -48,9 +48,9 @@ async function checkDomainAvailability(name: string, tld: string): Promise<boole
     const domain = `${name}${tld}`
     const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=NS`)
     const data = await res.json()
-    // If there are NS Answer records, domain is taken
-    // Also check Authority for SOA (some registered domains don't have NS in Answer)
-    return !data.Answer && !data.Authority?.some((r: any) => r.type === 2)
+    // Status 3 = NXDOMAIN (domain doesn't exist = available)
+    // Status 0 = NOERROR (domain exists = taken)
+    return data.Status === 3
   } catch {
     return false // assume taken on error
   }
