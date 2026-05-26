@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import BrandLogo from './BrandLogo'
 
 const ADMIN_EMAILS = ['test-agent@agentpages.io', 'mark@activateos.com', 'mark@chatdxb.com']
@@ -31,6 +32,10 @@ function getInitials(email?: string, firstName?: string, lastName?: string): str
   return email.substring(0, 2).toUpperCase()
 }
 
+const TIER_CREDIT_LIMITS: Record<string, number> = {
+  starter: 1, solo: 10, active: 25, studio: 50,
+}
+
 export default function AppShell({
   children,
   activeNav,
@@ -41,7 +46,22 @@ export default function AppShell({
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
+  const [creditInfo, setCreditInfo] = useState<{ used: number; limit: number } | null>(null)
   const initials = getInitials(user?.email)
+
+  useEffect(() => {
+    if (!user) return
+    Promise.all([
+      supabase.from('profiles').select('plan').eq('id', user.id).single(),
+      supabase.from('properties').select('id', { count: 'exact', head: true }).eq('workspace_id', user.id).eq('status', 'live'),
+      supabase.from('developments').select('id', { count: 'exact', head: true }).eq('workspace_id', user.id).eq('status', 'live').eq('mode', 'full_info'),
+    ]).then(([{ data: prof }, { count: listingCount }, { count: devCount }]) => {
+      const plan = ((prof as { plan: string } | null)?.plan ?? 'starter').toLowerCase()
+      const limit = TIER_CREDIT_LIMITS[plan] ?? 1
+      const used = (listingCount ?? 0) + (devCount ?? 0)
+      setCreditInfo({ used, limit })
+    })
+  }, [user])
 
   return (
     <>
@@ -143,6 +163,29 @@ export default function AppShell({
                 {rightActions}
               </div>
             )}
+
+            {/* Credit indicator */}
+            {creditInfo !== null && (() => {
+              const pct = creditInfo.limit > 0 ? creditInfo.used / creditInfo.limit : 0
+              const atLimit = creditInfo.used >= creditInfo.limit
+              const approaching = !atLimit && pct > 0.80
+              return (
+                <Link
+                  to="/pricing"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '5px 10px', borderRadius: 7, textDecoration: 'none',
+                    fontSize: 11.5, fontWeight: 600,
+                    background: atLimit ? 'var(--accent-soft,#e8f0ed)' : approaching ? '#fef9ec' : 'var(--line-soft,#f0f2f4)',
+                    color: atLimit ? 'var(--accent,#2d5a4f)' : approaching ? '#b45309' : 'var(--muted,#5a6470)',
+                    border: `1px solid ${atLimit ? '#c9dcd6' : approaching ? '#fde68a' : 'transparent'}`,
+                  }}
+                >
+                  {creditInfo.used} / {creditInfo.limit} credits
+                  {atLimit && <span style={{ marginLeft: 2 }}>Upgrade →</span>}
+                </Link>
+              )
+            })()}
 
             {/* Admin link — only for admin emails */}
             {user && ADMIN_EMAILS.includes(user.email || '') && (

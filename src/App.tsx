@@ -22,6 +22,7 @@ import DomainSettings from './pages/DomainSettings'
 import Developments from './pages/Developments'
 import DevelopmentNew from './pages/DevelopmentNew'
 import DevelopmentEdit from './pages/DevelopmentEdit'
+import Pricing from './pages/Pricing'
 
 export default function App() {
   return (
@@ -162,6 +163,9 @@ export default function App() {
             <Admin />
           </ProtectedRoute>
         } />
+
+        {/* Public pricing page */}
+        <Route path="/pricing" element={<Pricing />} />
 
         {/* Default */}
         <Route path="/" element={<Home />} />

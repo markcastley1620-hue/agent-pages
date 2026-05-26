@@ -43,11 +43,13 @@ function timeAgo(dateStr: string): string {
 
 type TabKey = 'all' | 'live' | 'draft' | 'archived'
 
-const TIER_DEV_LIMITS: Record<string, number> = {
-  starter: 0,
-  growth: 1,
-  pro: 3,
-  studio: Infinity,
+// New credit-pool model: starter=1, solo=10, active=25, studio=50
+// Credits = live listings + live full_info developments; teasers always free
+const TIER_CREDIT_LIMITS: Record<string, number> = {
+  starter: 1,
+  solo: 10,
+  active: 25,
+  studio: 50,
 }
 
 export default function Developments() {
@@ -96,22 +98,8 @@ export default function Developments() {
 
   const handleAddNew = async () => {
     if (!user) return
-    const [{ data: ent }, { count }] = await Promise.all([
-      supabase.from('entitlements').select('plan').eq('agent_id', user.id).eq('active', true).maybeSingle(),
-      supabase.from('developments').select('id', { count: 'exact', head: true }).eq('workspace_id', user.id).neq('status', 'archived'),
-    ])
-    const plan = ((ent as { plan: string } | null)?.plan ?? 'starter').toLowerCase()
-    const limit = TIER_DEV_LIMITS[plan] ?? 0
-    const current = count ?? 0
-    if (current >= limit) {
-      const tierName = plan.charAt(0).toUpperCase() + plan.slice(1)
-      const nextTier = plan === 'starter' ? 'Growth' : plan === 'growth' ? 'Pro' : plan === 'pro' ? 'Studio' : 'a higher plan'
-      const msg = limit === 0
-        ? `Developments are not available on the ${tierName} (free) plan. Upgrade to ${nextTier} to create your first development.`
-        : `You've reached ${limit} development${limit !== 1 ? 's' : ''} on ${tierName}. Upgrade to ${nextTier} for ${nextTier === 'Studio' ? 'unlimited' : 'more'}.`
-      setTierModal(msg)
-      return
-    }
+    // Teasers are always free — never block entry to DevelopmentNew
+    // The credit gate is enforced inside DevelopmentNew when publishing Full Info
     navigate('/developments/new')
   }
 

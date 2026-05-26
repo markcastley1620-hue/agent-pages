@@ -176,25 +176,26 @@ export default function DevelopmentNew() {
   }, [])
 
   const checkTierGating = useCallback(async (workspaceId: string) => {
-    const TIER_DEV_LIMITS: Record<string, number> = {
-      starter: 0,
-      growth: 1,
-      pro: 3,
-      studio: Infinity,
+    // New credit-pool model: credits used = live listings + live full_info developments
+    // Teasers are always free — never gated
+    const TIER_CREDIT_LIMITS: Record<string, number> = {
+      starter: 1,
+      solo: 10,
+      active: 25,
+      studio: 50,
     }
-    const [{ data: ent }, { count }] = await Promise.all([
-      supabase.from('entitlements').select('plan').eq('agent_id', workspaceId).eq('active', true).maybeSingle(),
-      supabase.from('developments').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).neq('status', 'archived'),
+    const [{ data: prof }, { count: listingCount }, { count: devCount }] = await Promise.all([
+      supabase.from('profiles').select('plan').eq('id', workspaceId).single(),
+      supabase.from('properties').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'live'),
+      supabase.from('developments').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'live').eq('mode', 'full_info'),
     ])
-    const plan = ((ent as { plan: string } | null)?.plan ?? 'starter').toLowerCase()
-    const limit = TIER_DEV_LIMITS[plan] ?? 0
-    const current = count ?? 0
-    if (current >= limit) {
+    const plan = ((prof as { plan: string } | null)?.plan ?? 'starter').toLowerCase()
+    const limit = TIER_CREDIT_LIMITS[plan] ?? 1
+    const creditsUsed = (listingCount ?? 0) + (devCount ?? 0)
+    if (creditsUsed >= limit) {
       const tierName = plan.charAt(0).toUpperCase() + plan.slice(1)
-      const nextTier = plan === 'starter' ? 'Growth' : plan === 'growth' ? 'Pro' : plan === 'pro' ? 'Studio' : 'a higher plan'
-      const msg = limit === 0
-        ? `Developments are not available on the ${tierName} (free) plan. Upgrade to ${nextTier} to create your first development.`
-        : `You've reached ${limit} development${limit !== 1 ? 's' : ''} on ${tierName}. Upgrade to ${nextTier} for ${nextTier === 'Studio' ? 'unlimited' : 'more'}.`
+      const nextTier = plan === 'starter' ? 'Solo' : plan === 'solo' ? 'Active' : plan === 'active' ? 'Studio' : 'a higher plan'
+      const msg = `You've used all ${limit} credit${limit !== 1 ? 's' : ''} on ${tierName}. Upgrade to ${nextTier} to publish more Full Info developments or listings. You can still create Teasers for free.`
       setTierMessage(msg)
       setTierBlocked(true)
     }
@@ -332,18 +333,7 @@ export default function DevelopmentNew() {
     </div>
   )
 
-  if (tierBlocked) {
-    return (
-      <AppShell variant="breadcrumb" breadcrumb={{ parent: 'Developments', parentHref: '/developments', current: 'Add new' }} rightActions={rightActions}>
-        <div style={{ maxWidth: 600, margin: '80px auto', padding: '0 32px', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink,#0f1419)', marginBottom: 12 }}>Upgrade to add developments</h2>
-          <p style={{ fontSize: 14, color: 'var(--muted,#5a6470)', lineHeight: 1.6, marginBottom: 24 }}>{tierMessage}</p>
-          <a href="/settings" style={{ display: 'inline-flex', padding: '10px 22px', background: 'var(--accent,#2d5a4f)', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>View upgrade options</a>
-        </div>
-      </AppShell>
-    )
-  }
+  // tierBlocked means credits are full — teasers still allowed, show inline notice in step 1
 
   return (
     <AppShell variant="breadcrumb" breadcrumb={{ parent: 'Developments', parentHref: '/developments', current: 'Add new' }} rightActions={rightActions}>
@@ -469,6 +459,8 @@ export default function DevelopmentNew() {
                 setShowAddDev={setShowAddDev}
                 newDevName={newDevName}
                 setNewDevName={setNewDevName}
+                tierBlocked={tierBlocked}
+                tierMessage={tierMessage}
                 onAddDeveloper={async () => {
                   if (!newDevName.trim()) return
                   const { data } = await supabase.from('developers').insert({
@@ -527,6 +519,8 @@ export default function DevelopmentNew() {
                 form={form}
                 setField={setField}
                 effectiveSlug={effectiveSlug}
+                tierBlocked={tierBlocked}
+                tierMessage={tierMessage}
                 onBack={() => setStep(4)}
                 onPublish={async () => {
                   if (!user) return
@@ -586,7 +580,8 @@ export default function DevelopmentNew() {
 /* ══════════════════ STEP 1 — BASICS ══════════════════ */
 function Step1({
   form, setField, developers, devSearch, setDevSearch, devDropOpen, setDevDropOpen,
-  showAddDev, setShowAddDev, newDevName, setNewDevName, onAddDeveloper, onContinue
+  showAddDev, setShowAddDev, newDevName, setNewDevName, onAddDeveloper, onContinue,
+  tierBlocked, tierMessage,
 }: {
   form: FormState
   setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void
@@ -601,6 +596,8 @@ function Step1({
   setNewDevName: (s: string) => void
   onAddDeveloper: () => Promise<void>
   onContinue: () => void
+  tierBlocked: boolean
+  tierMessage: string
 }) {
   const filteredDevs = developers.filter(d => d.name.toLowerCase().includes(devSearch.toLowerCase()))
 
@@ -741,6 +738,12 @@ function Step1({
         <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--highlight,#f6f1e8)', border: '1px solid var(--highlight-line,#ebe3d2)', borderRadius: 8, fontSize: 12, color: 'var(--highlight-text,#8b6f3a)', lineHeight: 1.5 }}>
           You can upgrade Teaser → Full Info at any time. Priority-list leads will be automatically notified when you do.
         </div>
+        {tierBlocked && form.mode === 'full_info' && (
+          <div style={{ marginTop: 10, padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 12.5, color: '#991b1b', lineHeight: 1.55 }}>
+            <strong>Credit limit reached.</strong> {tierMessage}
+            <a href="/pricing" style={{ color: '#991b1b', fontWeight: 600, marginLeft: 6 }}>View plans →</a>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 24, borderTop: '1px solid var(--line-soft,#f0f2f4)' }}>
@@ -1206,14 +1209,17 @@ function Step4({ form, setField, onBack, onContinue }: {
 }
 
 /* ══════════════════ STEP 5 — URL & PUBLISH ══════════════════ */
-function Step5({ form, setField, effectiveSlug, onBack, onPublish }: {
+function Step5({ form, setField, effectiveSlug, onBack, onPublish, tierBlocked, tierMessage }: {
   form: FormState
   setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void
   effectiveSlug: string
   onBack: () => void
   onPublish: () => Promise<void>
+  tierBlocked: boolean
+  tierMessage: string
 }) {
   const [publishing, setPublishing] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   return (
     <div>
@@ -1296,7 +1302,13 @@ function Step5({ form, setField, effectiveSlug, onBack, onPublish }: {
             <button
               className="dnw-btn-primary"
               disabled={publishing}
-              onClick={async () => { setPublishing(true); await onPublish(); setPublishing(false) }}
+              onClick={async () => {
+                if (form.mode === 'full_info' && tierBlocked) {
+                  setShowUpgradeModal(true)
+                  return
+                }
+                setPublishing(true); await onPublish(); setPublishing(false)
+              }}
               style={{ opacity: publishing ? 0.7 : 1 }}
             >
               {publishing ? 'Publishing…' : 'Publish development'}
@@ -1305,6 +1317,21 @@ function Step5({ form, setField, effectiveSlug, onBack, onPublish }: {
           </div>
         </div>
       </div>
+
+      {/* Upgrade modal */}
+      {showUpgradeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setShowUpgradeModal(false)}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '32px 28px', maxWidth: 440, width: '100%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 36, marginBottom: 14 }}>🔒</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink,#0f1419)', marginBottom: 10 }}>Credit limit reached</h3>
+            <p style={{ fontSize: 14, color: 'var(--muted,#5a6470)', lineHeight: 1.65, marginBottom: 24 }}>{tierMessage}</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button onClick={() => setShowUpgradeModal(false)} style={{ padding: '9px 18px', border: '1px solid var(--line,#e6e8eb)', borderRadius: 8, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--muted,#5a6470)' }}>Cancel</button>
+              <a href="/pricing" style={{ padding: '9px 18px', background: 'var(--accent,#2d5a4f)', color: '#fff', borderRadius: 8, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>View plans →</a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
