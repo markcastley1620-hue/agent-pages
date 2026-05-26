@@ -308,10 +308,10 @@ export default function DevelopmentEdit() {
     if (!id) return
     setUpgradingMode(true)
     try {
-      const res = await fetch('https://bwzrbneskvvddukivphk.supabase.co/functions/v1/upgrade-development-mode', {
+      const res = await fetch('https://bwzrbneskvvddukivphk.supabase.co/functions/v1/submit-development-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-        body: JSON.stringify({ development_id: id }),
+        body: JSON.stringify({ action: 'upgrade', development_id: id }),
       })
       const data = await res.json() as { upgraded?: boolean; leads_notified?: number; error?: string }
       if (!res.ok) throw new Error(data.error ?? 'Upgrade failed')
