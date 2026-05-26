@@ -738,7 +738,7 @@ export default function DomainSettings() {
     }
   }
 
-  const handleProgressComplete = async () => {
+  const handleProgressComplete = useCallback(async () => {
     if (!selectedDomain || !user) { setPageState('live'); return }
     const fullDomain = `${selectedDomain.name}${selectedDomain.tld}`
     // Mark as live (actual Cloudflare registration will be wired later)
@@ -751,7 +751,8 @@ export default function DomainSettings() {
       console.error('Failed to update domain status:', e)
     }
     setPageState('live')
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDomain, user])
 
   // Load saved domain on mount
   useEffect(() => {
