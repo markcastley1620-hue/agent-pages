@@ -15,6 +15,7 @@ import Onboarding from './pages/Onboarding'
 import Analytics from './pages/Analytics'
 import PublicPortfolio from './pages/PublicPortfolio'
 import PublicProperty from './pages/PublicProperty'
+import PublicDevelopment from './pages/PublicDevelopment'
 import Home from './pages/Home'
 import Admin from './pages/Admin'
 import DomainSettings from './pages/DomainSettings'
@@ -168,6 +169,7 @@ export default function App() {
         {/* Public pages — MUST be last to avoid catching /dashboard, /properties etc */}
         <Route path="/p/:agentSlug" element={<PublicPortfolio />} />
         <Route path="/p/:agentSlug/:propertySlug" element={<PublicProperty />} />
+        <Route path="/d/:agentSlug/:devSlug" element={<PublicDevelopment />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
