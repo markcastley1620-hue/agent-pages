@@ -70,6 +70,14 @@ export default function Settings() {
   const [savedSection, setSavedSection] = useState<string | null>(null)
   const [activeLink, setActiveLink] = useState('identity')
 
+  // Property defaults state
+  const [ownedDomains, setOwnedDomains] = useState<string[]>([])
+  const [selectedDomain, setSelectedDomain] = useState('')
+  const [leadHeadline, setLeadHeadline] = useState('Interested in this property?')
+  const [leadDesc, setLeadDesc] = useState("Leave your details and I'll be in touch within the hour.")
+  const [showSoldPricing, setShowSoldPricing] = useState(true)
+  const [defaultTone, setDefaultTone] = useState<'Refined' | 'Bold' | 'Investor'>('Refined')
+
   const [profile, setProfile] = useState<Profile>({
     first_name: '', last_name: '', role: '', tagline: '',
     brokerage_name: '', rera_number: '', orn: '',
@@ -88,6 +96,7 @@ export default function Settings() {
   const refBilling = useRef<HTMLDivElement>(null)
   const refIntegrations = useRef<HTMLDivElement>(null)
   const refTeam = useRef<HTMLDivElement>(null)
+  const refPropDefaults = useRef<HTMLDivElement>(null)
 
   const sectionRefs: Record<string, React.RefObject<HTMLDivElement | null>> = {
     identity: refIdentity,
@@ -98,10 +107,15 @@ export default function Settings() {
     billing: refBilling,
     integrations: refIntegrations,
     team: refTeam,
+    propDefaults: refPropDefaults,
   }
 
   useEffect(() => {
     if (!user) return
+    // Load owned domains
+    supabase.from('workspace_domains').select('domain').eq('agent_id', user.id).then(({ data }) => {
+      setOwnedDomains(data?.map((d: { domain: string }) => d.domain) || [])
+    })
     supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
       if (data) {
         setProfile(prev => ({
@@ -125,6 +139,11 @@ export default function Settings() {
           show_whatsapp: data.show_whatsapp ?? true,
           show_calendar: data.show_calendar ?? false,
         }))
+        if (data.default_lead_headline) setLeadHeadline(data.default_lead_headline)
+        if (data.default_lead_desc) setLeadDesc(data.default_lead_desc)
+        if (data.default_show_sold_pricing != null) setShowSoldPricing(data.default_show_sold_pricing)
+        if (data.default_tone) setDefaultTone(data.default_tone)
+        if (data.custom_domain) setSelectedDomain(data.custom_domain)
       }
       setLoading(false)
     })
@@ -206,6 +225,7 @@ export default function Settings() {
               { id: 'identity', label: 'Profile & branding', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2" /></svg> },
               { id: 'brokerage', label: 'Brokerage & compliance', icon: <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg> },
               { id: 'brand', label: 'Brand & URL', icon: <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg> },
+              { id: 'propDefaults', label: 'Property defaults', icon: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg> },
             ].map(({ id, label, icon }) => (
               <button key={id} type="button" className={`s-side-link${activeLink === id ? ' active' : ''}`} onClick={() => scrollTo(id)}>
                 <svg viewBox="0 0 24 24">{icon.props.children}</svg>
@@ -285,7 +305,7 @@ export default function Settings() {
               <div className="s-photo-row">
                 {profile.photo_url
                   ? <img src={profile.photo_url} alt="Profile" className="s-photo-preview" />
-                  : <div className="s-photo-preview" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#a89880' }}>👤</div>
+                  : <div className="s-photo-preview" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89880' }}><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/></svg></div>
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="s-photo-name">{profile.photo_url ? 'Profile photo' : 'No photo uploaded'}</div>
@@ -456,16 +476,31 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Custom domain upsell */}
+              {/* Custom domain selector */}
               <div className="s-field">
                 <div className="s-field-label">Custom domain<span className="s-field-optional">Pro &amp; above</span></div>
-                <div className="s-domain-upsell">
-                  <div className="s-domain-upsell-title">Want to use your own domain?</div>
-                  <div className="s-domain-upsell-desc">
-                    Connect a domain like <strong>bennett.ae</strong> or buy per-property URLs like <strong>4bedroomvillainmeadows.com</strong>. SSL and DNS handled automatically.
+                {ownedDomains.length > 0 ? (
+                  <div>
+                    <select
+                      className="s-field-input"
+                      value={selectedDomain}
+                      onChange={e => setSelectedDomain(e.target.value)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="">agentpages.io/{profile.slug || 'your-handle'} (default)</option>
+                      {ownedDomains.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                    <div className="s-field-hint">Your portfolio will be served from the selected domain. SSL handled automatically.</div>
                   </div>
-                  <button type="button" className="s-btn s-btn-primary" onClick={() => navigate('/settings/domain')}>Add custom domain</button>
-                </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--paper-warm,#fbfaf7)', border: '1px solid var(--line-soft,#f0f2f4)', borderRadius: 8 }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0, color: 'var(--muted)' }}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>No domains connected yet.</span>
+                    <button type="button" className="s-btn-ghost" style={{ marginLeft: 'auto', fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', whiteSpace: 'nowrap' }} onClick={() => navigate('/settings/domain')}>Buy a custom domain →</button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="s-sec-card-foot">
@@ -477,6 +512,113 @@ export default function Settings() {
                 onClick={() => save('brand', { accent_color: profile.accent_color, slug: profile.slug })}
               >
                 {saving === 'brand' ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+
+          {/* ── PROPERTY DEFAULTS ─────────────────────────────────────── */}
+          <div ref={refPropDefaults} className="s-sec-card">
+            <div className="s-sec-card-head">
+              <div className="s-sec-card-head-text">
+                <div className="s-sec-card-title">Property defaults</div>
+                <div className="s-sec-card-sub">Default settings applied when you create a new property page. You can override per-property.</div>
+              </div>
+              {savedSection === 'propDefaults' && <SavedPill />}
+            </div>
+            <div className="s-sec-card-body">
+
+              {/* AI description tone */}
+              <div className="s-field">
+                <div className="s-field-label">Default AI description tone</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                  {(['Refined', 'Bold', 'Investor'] as const).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setDefaultTone(t)}
+                      style={{
+                        padding: '5px 14px', borderRadius: 20, fontSize: 12.5, fontWeight: 600,
+                        cursor: 'pointer', border: '1.5px solid',
+                        borderColor: defaultTone === t ? 'var(--accent,#2d5a4f)' : 'var(--line,#e6e8eb)',
+                        background: defaultTone === t ? 'var(--accent-soft,#e8f0ed)' : '#fff',
+                        color: defaultTone === t ? 'var(--accent,#2d5a4f)' : 'var(--muted,#5a6470)',
+                        transition: 'all .15s',
+                      }}
+                    >{t}</button>
+                  ))}
+                </div>
+                <div className="s-field-hint">Used when generating AI descriptions on new pages.</div>
+              </div>
+
+              {/* Sold pricing toggle */}
+              <div className="s-toggle-row">
+                <div className="s-toggle-row-text">
+                  <div className="s-toggle-row-title">Show sold pricing data by default</div>
+                  <div className="s-toggle-row-desc">Include DLD sold transaction data for the community. Builds buyer trust. Can be toggled per property.</div>
+                </div>
+                <Toggle on={showSoldPricing} onToggle={() => setShowSoldPricing(v => !v)} />
+              </div>
+
+              {/* Lead capture form — always on, edit wording */}
+              <div style={{ borderTop: '1px solid var(--line-soft,#f0f2f4)', paddingTop: 18, marginTop: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Lead capture form</div>
+                  <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '2px 7px', borderRadius: 4, letterSpacing: '0.04em' }}>ALWAYS ON</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.5 }}>The lead form always appears on your property pages. Customise the default wording buyers see:</div>
+                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' as const }}>
+                  {/* Editor */}
+                  <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+                    <div className="s-field">
+                      <div className="s-field-label">Headline</div>
+                      <input className="s-field-input" value={leadHeadline} onChange={e => setLeadHeadline(e.target.value)} placeholder="Interested in this property?" />
+                    </div>
+                    <div className="s-field" style={{ marginTop: 10 }}>
+                      <div className="s-field-label">Description</div>
+                      <input className="s-field-input" value={leadDesc} onChange={e => setLeadDesc(e.target.value)} placeholder="Leave your details and I'll be in touch within the hour." />
+                    </div>
+                  </div>
+                  {/* Live preview */}
+                  <div style={{ flex: '1 1 220px', minWidth: 200 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>Preview</div>
+                    <div style={{ background: '#fff', border: '1.5px solid var(--accent,#2d5a4f)', borderRadius: 10, padding: '14px 16px' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{leadHeadline || 'Interested in this property?'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.4 }}>{leadDesc || "Leave your details and I'll be in touch within the hour."}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                        <div style={{ height: 28, background: 'var(--line-soft,#f0f2f4)', borderRadius: 6, fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', padding: '0 10px' }}>Your name</div>
+                        <div style={{ height: 28, background: 'var(--line-soft,#f0f2f4)', borderRadius: 6, fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', padding: '0 10px' }}>Phone / WhatsApp</div>
+                        <div style={{ height: 30, background: 'var(--accent,#2d5a4f)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Request viewing</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="s-sec-card-foot">
+              <div className="s-sec-card-foot-text">Applied as defaults when you create a new property page</div>
+              <button
+                type="button"
+                className="s-btn s-btn-primary"
+                disabled={saving === 'propDefaults'}
+                onClick={() => {
+                  if (!user) return
+                  setSaving('propDefaults')
+                  supabase.from('profiles').update({
+                    default_lead_headline: leadHeadline,
+                    default_lead_desc: leadDesc,
+                    default_show_sold_pricing: showSoldPricing,
+                    default_tone: defaultTone,
+                    custom_domain: selectedDomain || null,
+                  }).eq('id', user.id).then(() => {
+                    setSaving(null)
+                    setSavedSection('propDefaults')
+                    setTimeout(() => setSavedSection(null), 2500)
+                  })
+                }}
+              >
+                {saving === 'propDefaults' ? 'Saving…' : 'Save changes'}
               </button>
             </div>
           </div>
