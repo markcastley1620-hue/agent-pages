@@ -43,6 +43,13 @@ function timeAgo(dateStr: string): string {
 
 type TabKey = 'all' | 'live' | 'draft' | 'archived'
 
+const TIER_DEV_LIMITS: Record<string, number> = {
+  starter: 0,
+  growth: 1,
+  pro: 3,
+  studio: Infinity,
+}
+
 export default function Developments() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -52,6 +59,7 @@ export default function Developments() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>('all')
   const [search, setSearch] = useState('')
+  const [tierModal, setTierModal] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -86,6 +94,27 @@ export default function Developments() {
     archived: developments.filter(d => d.status === 'archived').length,
   }
 
+  const handleAddNew = async () => {
+    if (!user) return
+    const [{ data: ent }, { count }] = await Promise.all([
+      supabase.from('entitlements').select('plan').eq('agent_id', user.id).eq('active', true).maybeSingle(),
+      supabase.from('developments').select('id', { count: 'exact', head: true }).eq('workspace_id', user.id).neq('status', 'archived'),
+    ])
+    const plan = ((ent as { plan: string } | null)?.plan ?? 'starter').toLowerCase()
+    const limit = TIER_DEV_LIMITS[plan] ?? 0
+    const current = count ?? 0
+    if (current >= limit) {
+      const tierName = plan.charAt(0).toUpperCase() + plan.slice(1)
+      const nextTier = plan === 'starter' ? 'Growth' : plan === 'growth' ? 'Pro' : plan === 'pro' ? 'Studio' : 'a higher plan'
+      const msg = limit === 0
+        ? `Developments are not available on the ${tierName} (free) plan. Upgrade to ${nextTier} to create your first development.`
+        : `You've reached ${limit} development${limit !== 1 ? 's' : ''} on ${tierName}. Upgrade to ${nextTier} for ${nextTier === 'Studio' ? 'unlimited' : 'more'}.`
+      setTierModal(msg)
+      return
+    }
+    navigate('/developments/new')
+  }
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 32px 80px' }}>
       <style>{`
@@ -113,7 +142,7 @@ export default function Developments() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/developments/new')}
+          onClick={handleAddNew}
           style={{
             padding: '9px 18px', background: 'var(--accent, #2d5a4f)', color: '#fff',
             border: 'none', borderRadius: 9, fontSize: 13.5, fontWeight: 600,
@@ -181,7 +210,7 @@ export default function Developments() {
             </div>
             {!search && (
               <button
-                onClick={() => navigate('/developments/new')}
+                onClick={handleAddNew}
                 style={{
                   padding: '8px 16px', background: 'var(--accent, #2d5a4f)', color: '#fff',
                   border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
@@ -236,6 +265,21 @@ export default function Developments() {
           ))
         )}
       </div>
+
+      {/* Tier paywall modal */}
+      {tierModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setTierModal(null)}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '32px 28px', maxWidth: 420, width: '100%', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 36, marginBottom: 14 }}>🔒</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink, #0f1419)', marginBottom: 10 }}>Upgrade to add developments</h3>
+            <p style={{ fontSize: 14, color: 'var(--muted, #5a6470)', lineHeight: 1.6, marginBottom: 24 }}>{tierModal}</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button onClick={() => setTierModal(null)} style={{ padding: '9px 18px', border: '1px solid var(--line, #e6e8eb)', borderRadius: 8, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--muted, #5a6470)' }}>Cancel</button>
+              <a href="/settings" style={{ padding: '9px 18px', background: 'var(--accent, #2d5a4f)', color: '#fff', borderRadius: 8, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>View plans</a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

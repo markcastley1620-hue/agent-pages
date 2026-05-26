@@ -142,21 +142,30 @@ function TeaserPage({
   const firstName = agent.first_name || agentName.split(' ')[0]
   const devShortCode = developer?.short_code ?? (developer?.name?.substring(0, 2).toUpperCase() ?? 'DV')
 
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3enJibmVza3Z2ZGR1a2l2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDExNDksImV4cCI6MjA5NDUxNzE0OX0.cIBiipAFFiGqqP89sHxHg2RDbHKrrB5SxkCfcI7Tq8Y'
+
   async function handleRegister(e: FormEvent) {
     e.preventDefault()
     setStatus('sending')
-    const { error } = await supabase.from('development_leads').insert({
-      development_id: dev.id,
-      workspace_id: dev.workspace_id,
-      name: form.name,
-      email: form.email || null,
-      whatsapp: form.whatsapp || null,
-      source_mode: 'teaser',
-      budget_range: form.budget_range || null,
-      purpose: form.purpose,
-      stage: 'registered',
-    })
-    setStatus(error ? 'error' : 'sent')
+    try {
+      const res = await fetch('https://bwzrbneskvvddukivphk.supabase.co/functions/v1/submit-development-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({
+          development_id: dev.id,
+          workspace_id: dev.workspace_id,
+          name: form.name,
+          email: form.email || null,
+          whatsapp: form.whatsapp || null,
+          source_mode: 'teaser',
+          budget_range: form.budget_range || null,
+          purpose: form.purpose,
+        }),
+      })
+      setStatus(res.ok ? 'sent' : 'error')
+    } catch {
+      setStatus('error')
+    }
   }
 
   const handover = handoverLabel(dev)
@@ -552,21 +561,30 @@ function FullInfoPage({
   const paymentPlan: PaymentMilestone[] = dev.payment_plan_json ?? []
   const totalPct = paymentPlan.reduce((s, m) => s + m.pct, 0)
 
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3enJibmVza3Z2ZGR1a2l2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDExNDksImV4cCI6MjA5NDUxNzE0OX0.cIBiipAFFiGqqP89sHxHg2RDbHKrrB5SxkCfcI7Tq8Y'
+
   async function handleLead(e: FormEvent) {
     e.preventDefault()
     setStatus('sending')
-    const { error } = await supabase.from('development_leads').insert({
-      development_id: dev.id,
-      workspace_id: dev.workspace_id,
-      name: form.name,
-      email: form.email || null,
-      whatsapp: form.whatsapp || null,
-      source_mode: 'full_info',
-      purpose: form.purpose,
-      interested_unit_type: form.interested_unit_type || null,
-      stage: 'brochure_requested',
-    })
-    setStatus(error ? 'error' : 'sent')
+    try {
+      const res = await fetch('https://bwzrbneskvvddukivphk.supabase.co/functions/v1/submit-development-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({
+          development_id: dev.id,
+          workspace_id: dev.workspace_id,
+          name: form.name,
+          email: form.email || null,
+          whatsapp: form.whatsapp || null,
+          source_mode: 'full_info',
+          purpose: form.purpose,
+          interested_unit_type: form.interested_unit_type || null,
+        }),
+      })
+      setStatus(res.ok ? 'sent' : 'error')
+    } catch {
+      setStatus('error')
+    }
   }
 
   return (

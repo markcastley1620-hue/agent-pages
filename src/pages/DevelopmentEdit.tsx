@@ -302,32 +302,27 @@ export default function DevelopmentEdit() {
     return () => { if (thesisTimerRef.current) clearTimeout(thesisTimerRef.current) }
   }, [form.thesis_chips, form.thesis_tone]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3enJibmVza3Z2ZGR1a2l2cGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDExNDksImV4cCI6MjA5NDUxNzE0OX0.cIBiipAFFiGqqP89sHxHg2RDbHKrrB5SxkCfcI7Tq8Y'
+
   const handleUpgradeToFullInfo = async () => {
     if (!id) return
     setUpgradingMode(true)
-    // 1. Update mode
-    await supabase.from('developments').update({
-      mode: 'full_info',
-      mode_changed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }).eq('id', id)
-    // 2. Get teaser leads to notify
-    const { data: leads } = await supabase
-      .from('development_leads')
-      .select('id')
-      .eq('development_id', id)
-      .eq('source_mode', 'teaser')
-      .eq('notified_of_full_info', false)
-    const leadIds = (leads as { id: string }[] ?? []).map(l => l.id)
-    if (leadIds.length > 0) {
-      await supabase.from('development_leads').update({
-        notified_of_full_info: true,
-        notified_at: new Date().toISOString(),
-      }).in('id', leadIds)
+    try {
+      const res = await fetch('https://bwzrbneskvvddukivphk.supabase.co/functions/v1/upgrade-development-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({ development_id: id }),
+      })
+      const data = await res.json() as { upgraded?: boolean; leads_notified?: number; error?: string }
+      if (!res.ok) throw new Error(data.error ?? 'Upgrade failed')
+      setField('mode', 'full_info')
+      const n = data.leads_notified ?? 0
+      alert(`Upgraded to Full Info! ${n} priority-list member${n !== 1 ? 's' : ''} notified.`)
+    } catch (err) {
+      alert(`Upgrade failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setUpgradingMode(false)
     }
-    setField('mode', 'full_info')
-    setUpgradingMode(false)
-    alert(`Upgraded to Full Info! ${leadIds.length} priority-list member${leadIds.length !== 1 ? 's' : ''} notified.`)
   }
 
   const effectiveSlug = form.slug || slugify(form.name) || 'development-name'

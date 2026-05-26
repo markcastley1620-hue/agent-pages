@@ -114,6 +114,9 @@ export default function DevelopmentNew() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(true)
   const [devId, setDevId] = useState<string | null>(null)
+  const [tierBlocked, setTierBlocked] = useState(false)
+  const [tierMessage, setTierMessage] = useState('')
+  const [agentProfile, setAgentProfile] = useState<{ display_name: string | null; years_experience: number | null } | null>(null)
 
   const [developers, setDevelopers] = useState<Developer[]>([])
   const [devSearch, setDevSearch] = useState('')
@@ -158,12 +161,44 @@ export default function DevelopmentNew() {
       supabase.from('developers').select('id,name,slug,short_code,logo_url').order('name'),
       supabase.from('payment_plan_templates').select('*').eq('active', true).order('display_order'),
       supabase.from('thesis_chips').select('*').eq('active', true).order('display_order'),
-    ]).then(([{ data: devs }, { data: plans }, { data: chips }]) => {
+      supabase.from('profiles').select('display_name,years_experience').eq('workspace_id', user?.id ?? '').maybeSingle(),
+    ]).then(([{ data: devs }, { data: plans }, { data: chips }, { data: prof }]) => {
       setDevelopers((devs as Developer[]) ?? [])
       setPaymentTemplates((plans as PaymentTemplate[]) ?? [])
       setThesisChips((chips as ThesisChip[]) ?? [])
+      setAgentProfile((prof as { display_name: string | null; years_experience: number | null } | null) ?? null)
     })
+
+    // Tier gating check
+    if (user) {
+      checkTierGating(user.id)
+    }
   }, [])
+
+  const checkTierGating = useCallback(async (workspaceId: string) => {
+    const TIER_DEV_LIMITS: Record<string, number> = {
+      starter: 0,
+      growth: 1,
+      pro: 3,
+      studio: Infinity,
+    }
+    const [{ data: ent }, { count }] = await Promise.all([
+      supabase.from('entitlements').select('plan').eq('agent_id', workspaceId).eq('active', true).maybeSingle(),
+      supabase.from('developments').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).neq('status', 'archived'),
+    ])
+    const plan = ((ent as { plan: string } | null)?.plan ?? 'starter').toLowerCase()
+    const limit = TIER_DEV_LIMITS[plan] ?? 0
+    const current = count ?? 0
+    if (current >= limit) {
+      const tierName = plan.charAt(0).toUpperCase() + plan.slice(1)
+      const nextTier = plan === 'starter' ? 'Growth' : plan === 'growth' ? 'Pro' : plan === 'pro' ? 'Studio' : 'a higher plan'
+      const msg = limit === 0
+        ? `Developments are not available on the ${tierName} (free) plan. Upgrade to ${nextTier} to create your first development.`
+        : `You've reached ${limit} development${limit !== 1 ? 's' : ''} on ${tierName}. Upgrade to ${nextTier} for ${nextTier === 'Studio' ? 'unlimited' : 'more'}.`
+      setTierMessage(msg)
+      setTierBlocked(true)
+    }
+  }, [supabase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setField = useCallback(<K extends keyof FormState>(key: K, val: FormState[K]) => {
@@ -233,17 +268,19 @@ export default function DevelopmentNew() {
     setGeneratingThesis(true)
     // Call Supabase edge function (placeholder returns mock text)
     try {
-      const { data } = await supabase.functions.invoke('generate-thesis', {
+      const { data } = await supabase.functions.invoke('generate-offplan-thesis', {
         body: {
           development_name: form.name,
           developer_name: form.developer_name,
-          location: form.location?.locationDisplay ?? '',
+          community: form.location?.locationDisplay ?? '',
           property_type: form.property_type_label,
           handover: form.handover_quarter ? `${form.handover_quarter} ${form.handover_year}` : form.handover_year,
-          unit_types: form.unit_types.map(u => `${u.label}${u.price_from ? ' from AED ' + Number(u.price_from).toLocaleString() : ''}`).join(', '),
+          unit_mix_summary: form.unit_types.map(u => `${u.label}${u.price_from ? ' from AED ' + Number(u.price_from).toLocaleString() : ''}`).join(', '),
           payment_plan: form.payment_plan_template,
           thesis_chips: form.thesis_chips,
           tone: form.thesis_tone,
+          agent_name: agentProfile?.display_name ?? '',
+          agent_years: agentProfile?.years_experience ?? null,
         },
       })
       if (data?.thesis) {
@@ -294,6 +331,19 @@ export default function DevelopmentNew() {
       }}>Exit</Link>
     </div>
   )
+
+  if (tierBlocked) {
+    return (
+      <AppShell variant="breadcrumb" breadcrumb={{ parent: 'Developments', parentHref: '/developments', current: 'Add new' }} rightActions={rightActions}>
+        <div style={{ maxWidth: 600, margin: '80px auto', padding: '0 32px', textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink,#0f1419)', marginBottom: 12 }}>Upgrade to add developments</h2>
+          <p style={{ fontSize: 14, color: 'var(--muted,#5a6470)', lineHeight: 1.6, marginBottom: 24 }}>{tierMessage}</p>
+          <a href="/settings" style={{ display: 'inline-flex', padding: '10px 22px', background: 'var(--accent,#2d5a4f)', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>View upgrade options</a>
+        </div>
+      </AppShell>
+    )
+  }
 
   return (
     <AppShell variant="breadcrumb" breadcrumb={{ parent: 'Developments', parentHref: '/developments', current: 'Add new' }} rightActions={rightActions}>
