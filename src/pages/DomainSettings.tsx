@@ -43,16 +43,18 @@ const TLD_PRICES: Record<string, string> = {
 
 const TLDS = ['.com', '.ae', '.co', '.io', '.realestate', '.properties', '.homes', '.estate']
 
-async function checkDomainAvailability(name: string, tld: string): Promise<boolean> {
+// Batch check via our WHOIS API (Cloudflare Pages Function)
+async function checkDomainsAvailability(domains: string[]): Promise<Record<string, boolean>> {
   try {
-    const domain = `${name}${tld}`
-    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=NS`)
+    const res = await fetch(`/api/domain-check?names=${encodeURIComponent(domains.join(','))}`)
     const data = await res.json()
-    // Status 3 = NXDOMAIN (domain doesn't exist = available)
-    // Status 0 = NOERROR (domain exists = taken)
-    return data.Status === 3
+    if (!data.success) throw new Error('API error')
+    const map: Record<string, boolean> = {}
+    for (const r of data.results) map[r.domain] = r.available
+    return map
   } catch {
-    return false // assume taken on error
+    // Fallback: assume all taken on error
+    return Object.fromEntries(domains.map(d => [d, false]))
   }
 }
 
@@ -160,18 +162,15 @@ function SearchState({
     setSearching(true)
     const base = query.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
     const tldsToCheck = activeTlds.length > 0 ? activeTlds : TLDS
-    const checks = await Promise.all(
-      tldsToCheck.map(async (tld) => {
-        const available = await checkDomainAvailability(base, tld)
-        return {
-          name: base,
-          tld,
-          price: TLD_PRICES[tld] || 'AED 99',
-          available,
-          recommended: tld === '.com' && available,
-        } as DomainResult
-      })
-    )
+    const domains = tldsToCheck.map(tld => `${base}${tld}`)
+    const availMap = await checkDomainsAvailability(domains)
+    const checks: DomainResult[] = tldsToCheck.map(tld => ({
+      name: base,
+      tld,
+      price: TLD_PRICES[tld] || 'AED 99',
+      available: availMap[`${base}${tld}`] ?? false,
+      recommended: tld === '.com' && (availMap[`${base}${tld}`] ?? false),
+    }))
     // Sort: available first, then by recommended, then by price
     checks.sort((a, b) => {
       if (a.available !== b.available) return a.available ? -1 : 1
