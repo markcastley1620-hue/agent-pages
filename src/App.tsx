@@ -18,6 +18,9 @@ import PublicProperty from './pages/PublicProperty'
 import Home from './pages/Home'
 import Admin from './pages/Admin'
 import DomainSettings from './pages/DomainSettings'
+import Developments from './pages/Developments'
+import DevelopmentNew from './pages/DevelopmentNew'
+import DevelopmentEdit from './pages/DevelopmentEdit'
 
 export default function App() {
   return (
@@ -129,6 +132,26 @@ export default function App() {
             <AppShell activeNav="analytics">
               <Analytics />
             </AppShell>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/developments" element={
+          <ProtectedRoute>
+            <AppShell activeNav="developments">
+              <Developments />
+            </AppShell>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/developments/new" element={
+          <ProtectedRoute>
+            <DevelopmentNew />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/developments/:id/edit" element={
+          <ProtectedRoute>
+            <DevelopmentEdit />
           </ProtectedRoute>
         } />
 

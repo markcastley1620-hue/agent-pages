@@ -7,7 +7,7 @@ const ADMIN_EMAILS = ['test-agent@agentpages.io', 'mark@activateos.com', 'mark@c
 
 interface AppShellProps {
   children: React.ReactNode
-  activeNav?: 'dashboard' | 'properties' | 'leads' | 'portfolio' | 'analytics' | 'settings'
+  activeNav?: 'dashboard' | 'properties' | 'developments' | 'leads' | 'portfolio' | 'analytics' | 'settings'
   variant?: 'standard' | 'breadcrumb'
   breadcrumb?: { parent: string; parentHref: string; current: string }
   rightActions?: React.ReactNode
@@ -15,8 +15,9 @@ interface AppShellProps {
 
 const NAV_ITEMS = [
   { key: 'dashboard',  label: 'Dashboard',  to: '/dashboard' },
-  { key: 'properties', label: 'Properties', to: '/properties' },
-  { key: 'leads',      label: 'Leads',      to: '/leads' },
+  { key: 'properties',   label: 'Properties',   to: '/properties' },
+  { key: 'developments', label: 'Developments', to: '/developments' },
+  { key: 'leads',        label: 'Leads',        to: '/leads' },
   { key: 'portfolio',  label: 'Portfolio',  to: '/portfolio/edit' },
   { key: 'analytics',  label: 'Analytics',  to: '/analytics' },
 ]
