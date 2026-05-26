@@ -52,6 +52,8 @@ interface FormState {
   showSoldPricing: boolean
   showLeadForm: boolean
   showOnPortfolio: boolean
+  leadHeadline: string
+  leadDesc: string
   visibilityConfig: Record<string, boolean>
 }
 
@@ -141,7 +143,8 @@ export default function PropertyNew() {
     feature1: '', feature2: '', feature3: '', feature4: '',
     tone: 'Refined', description: '',
     photos: [],
-    slug: '', customDomain: '', showSoldPricing: false, showLeadForm: true, showOnPortfolio: true,
+    slug: '', customDomain: '', showSoldPricing: true, showLeadForm: true, showOnPortfolio: true,
+    leadHeadline: 'Interested in this property?', leadDesc: 'Leave your details and I\'ll be in touch within the hour.',
     visibilityConfig: { google: true, chatgpt: true, claude: true, gemini: true, perplexity: true, bing: true, grok: true },
   })
 
@@ -626,6 +629,22 @@ export default function PropertyNew() {
                   </div>
                 </div>
 
+                {/* Lead capture form preview */}
+                <div style={{ margin: '0 0 8px', padding: '14px 16px', background: 'var(--paper-warm,#fbfaf7)', borderTop: '1px solid var(--line-soft,#f0f2f4)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink,#0f1419)', marginBottom: 4, lineHeight: 1.3 }}>
+                    {form.leadHeadline || 'Interested in this property?'}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted,#5a6470)', marginBottom: 8, lineHeight: 1.4 }}>
+                    {form.leadDesc || "Leave your details and I'll be in touch within the hour."}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8 }}>
+                    {['Your name', 'Phone number', 'Email'].map(p => (
+                      <div key={p} style={{ padding: '6px 10px', background: '#fff', border: '1px solid var(--line,#e6e8eb)', borderRadius: 5, fontSize: 9.5, color: 'var(--quiet,#8b95a0)', fontStyle: 'italic' }}>{p}</div>
+                    ))}
+                  </div>
+                  <div style={{ padding: '6px 0', background: 'var(--accent,#2d5a4f)', borderRadius: 6, textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>Send enquiry</div>
+                </div>
+
                 <div style={{ textAlign: 'center', fontSize: 9, color: 'var(--quiet,#8b95a0)', paddingBottom: 8 }}>
                   Powered by Agent Pages
                 </div>
@@ -947,22 +966,25 @@ function Step3Form({ form, setField, onBack, onContinue }: {
         <FieldHint>This becomes your page headline and URL slug. Click Generate below to auto-fill from your property data.</FieldHint>
       </div>
 
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <FieldLabel>Tone</FieldLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
           {TONE_OPTIONS.map(t => {
             const sel = form.tone === t.id
             return (
               <div key={t.id} onClick={() => setField('tone', t.id)}
                 style={{
-                  padding: '14px 12px', borderRadius: 10, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 12px', borderRadius: 8, cursor: 'pointer', flex: 1,
                   border: sel ? '2px solid var(--accent,#2d5a4f)' : '1.5px solid var(--line,#e6e8eb)',
                   background: sel ? 'var(--accent-soft,#e8f0ed)' : '#fff',
                   transition: 'all .12s',
                 }}>
-                <div style={{ color: sel ? 'var(--accent,#2d5a4f)' : 'var(--muted,#5a6470)', marginBottom: 6 }}>{t.icon}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink,#0f1419)', marginBottom: 3 }}>{t.label}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--muted,#5a6470)', lineHeight: 1.4 }}>{t.desc}</div>
+                <div style={{ color: sel ? 'var(--accent,#2d5a4f)' : 'var(--muted,#5a6470)', flexShrink: 0 }}>{t.icon}</div>
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink,#0f1419)', lineHeight: 1.2 }}>{t.label}</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--muted,#5a6470)', lineHeight: 1.3 }}>{t.desc}</div>
+                </div>
               </div>
             )
           })}
@@ -1140,6 +1162,9 @@ function ToggleCard({ label, desc, value, onChange }: { label: string; desc: str
   )
 }
 
+// Mock owned domains (in real app, fetch from Supabase)
+const MOCK_OWNED_DOMAINS: string[] = []
+
 function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibilityChange }: {
   form: FormState
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1158,7 +1183,7 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibility
       <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent,#2d5a4f)', fontWeight: 600, marginBottom: 12 }}>STEP 5 OF 6</div>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--ink,#0f1419)', letterSpacing: '-0.025em', lineHeight: 1.15, marginBottom: 10 }}>URL &amp; options</h1>
       <p style={{ fontSize: 14, color: 'var(--muted,#5a6470)', marginBottom: 28, lineHeight: 1.6 }}>
-        Choose your page URL, toggle sold pricing data, and configure lead capture.
+        Choose your page URL, configure sold pricing, and customise your lead capture form.
       </p>
 
       <SectionDivider>Page URL</SectionDivider>
@@ -1184,13 +1209,36 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibility
         </div>
       </div>
 
+      {/* Custom domain — dropdown of owned domains */}
       <div style={{ marginBottom: 28 }}>
-        <FieldLabel optional>Custom domain</FieldLabel>
-        <input className="pnw-input" value={form.customDomain} onChange={e => setField('customDomain', e.target.value)} placeholder="e.g. 4bedroomvillainmeadows.com" />
-        <FieldHint>Pro plan and above. We handle DNS + SSL.</FieldHint>
+        <FieldLabel optional>Custom domain<span style={{ fontSize: 10, color: 'var(--quiet,#8b95a0)', fontWeight: 400, marginLeft: 4 }}>Pro &amp; above</span></FieldLabel>
+        {MOCK_OWNED_DOMAINS.length > 0 ? (
+          <select
+            className="pnw-input"
+            value={form.customDomain}
+            onChange={e => setField('customDomain', e.target.value)}
+            style={{ appearance: 'auto' }}
+          >
+            <option value="">Use agentpages.io (default)</option>
+            {MOCK_OWNED_DOMAINS.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        ) : (
+          <div style={{ padding: '11px 14px', background: '#fff', border: '1px solid var(--line,#e6e8eb)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 13, color: 'var(--quiet,#8b95a0)' }}>No custom domains connected</span>
+            <a
+              href="/settings/domain"
+              style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent,#2d5a4f)', textDecoration: 'none' }}
+            >
+              Buy a custom domain →
+            </a>
+          </div>
+        )}
+        <FieldHint>We handle DNS + SSL automatically. Domains managed in Settings.</FieldHint>
       </div>
 
-      <SectionDivider>Options</SectionDivider>
+      <SectionDivider>Sold pricing data</SectionDivider>
 
       <ToggleCard
         label="Show sold pricing data"
@@ -1221,7 +1269,6 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibility
               borderBottom: i < transactions.length - 1 ? '1px solid var(--line-soft,#f0f2f4)' : 'none',
               cursor: 'pointer',
             }}>
-              {/* Custom checkbox */}
               <div style={{
                 width: 18, height: 18, borderRadius: 4, flexShrink: 0,
                 border: txnChecked[i] ? 'none' : '1.5px solid var(--line,#e6e8eb)',
@@ -1243,18 +1290,42 @@ function Step5Form({ form, setField, onBack, onContinue, agentSlug, onVisibility
         </div>
       )}
 
-      <ToggleCard
-        label="Lead capture form"
-        desc="Show the enquiry form on this page. Leads go to your inbox + WhatsApp."
-        value={form.showLeadForm}
-        onChange={v => setField('showLeadForm', v)}
-      />
-      <ToggleCard
-        label="Show on portfolio"
-        desc="Include this property on your public portfolio page."
-        value={form.showOnPortfolio}
-        onChange={v => setField('showOnPortfolio', v)}
-      />
+      <SectionDivider>Lead capture form</SectionDivider>
+
+      {/* Lead form — always on, edit wording */}
+      <div style={{
+        background: '#fff', border: '2px solid var(--accent,#2d5a4f)', borderRadius: 10,
+        padding: '16px 18px', marginBottom: 10,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink,#0f1419)' }}>Lead capture form — always on</span>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--accent,#2d5a4f)', fontWeight: 600, background: 'var(--accent-soft,#e8f0ed)', padding: '2px 8px', borderRadius: 4 }}>Active</span>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--muted,#5a6470)', marginBottom: 14, lineHeight: 1.5 }}>
+          The form always appears on your page. Customise the wording buyers see:
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink,#0f1419)', marginBottom: 5 }}>Headline</div>
+          <input
+            className="pnw-input"
+            value={form.leadHeadline}
+            onChange={e => setField('leadHeadline', e.target.value)}
+            placeholder="Interested in this property?"
+          />
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink,#0f1419)', marginBottom: 5 }}>Description</div>
+          <input
+            className="pnw-input"
+            value={form.leadDesc}
+            onChange={e => setField('leadDesc', e.target.value)}
+            placeholder="Leave your details and I'll be in touch within the hour."
+          />
+        </div>
+      </div>
 
       {/* AI Search Visibility */}
       <AISearchVisibility

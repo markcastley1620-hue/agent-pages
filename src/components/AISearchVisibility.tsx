@@ -331,6 +331,29 @@ export default function AISearchVisibility({ mode, visibilityConfig, onConfigCha
         </div>
       </div>
 
+      {/* Recommendation banner */}
+      {mode === 'pre-publish' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 22px',
+          background: 'var(--accent-soft,#e8f0ed)', borderBottom: '1px solid var(--line-soft,#f0f2f4)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: 'var(--accent,#2d5a4f)' }}>
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent,#2d5a4f)' }}>
+            Recommended: Keep all models enabled for the best results
+          </span>
+          {!allOn && (
+            <button
+              onClick={() => setAll(true)}
+              style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'var(--accent,#2d5a4f)', background: '#fff', border: '1px solid var(--accent,#2d5a4f)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', flexShrink: 0 }}
+            >
+              Enable all
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Engine rows */}
       <div>
         {ENGINES.map((engine, idx) => {
@@ -400,9 +423,11 @@ export default function AISearchVisibility({ mode, visibilityConfig, onConfigCha
             ? 'Each engine receives a structured request with your listing URL, sitemap reference, and schema markup.'
             : `5 crawled · 2 awaiting first crawl · Sitemap submitted to all engines`}
         </span>
-        <a href="#" style={{ fontSize: 12, color: 'var(--accent,#2d5a4f)', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          {mode === 'pre-publish' ? 'Learn more' : 'Pipeline log'}
-        </a>
+        {mode === 'post-publish' && (
+          <a href="#" style={{ fontSize: 12, color: 'var(--accent,#2d5a4f)', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            Pipeline log
+          </a>
+        )}
       </div>
     </div>
   )
