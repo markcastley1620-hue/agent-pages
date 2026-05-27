@@ -174,6 +174,7 @@ export default function DevelopmentEdit() {
         developer_name: devName,
         name: d.name ?? '',
         location: d.lat && d.lng ? {
+          name: d.name ?? '', hierarchy: '', type: '',
           lat: d.lat, lng: d.lng, placeId: d.google_place_id ?? '',
           locationDisplay: d.formatted_address ?? '', locationExact: false,
           community: '', subCommunity: '', tower: '',

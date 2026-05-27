@@ -308,7 +308,6 @@ function NavLink({
 
 export default function Leads() {
   const { user } = useAuth()
-  const navigate = useNavigate()
 
   const [propertyLeads, setPropertyLeads] = useState<RawPropertyLead[]>([])
   const [devLeads, setDevLeads] = useState<RawDevelopmentLead[]>([])

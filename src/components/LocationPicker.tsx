@@ -11,10 +11,18 @@ export interface LocationValue {
   name: string
   hierarchy: string
   type: string
+  locationDisplay?: string
+  locationExact?: boolean
+  lat?: number
+  lng?: number
+  placeId?: string
+  community?: string
+  subCommunity?: string
+  tower?: string
 }
 
 export interface LocationPickerProps {
-  value: LocationValue | null
+  value: LocationValue | null | undefined
   onChange: (loc: LocationValue | null) => void
   required?: boolean
   /** Filter to only show certain types. e.g. ['N','C'] for communities only */

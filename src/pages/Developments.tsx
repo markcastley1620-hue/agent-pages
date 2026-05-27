@@ -42,16 +42,6 @@ function timeAgo(dateStr: string): string {
 }
 
 type TabKey = 'all' | 'live' | 'draft' | 'archived'
-
-// New credit-pool model: starter=1, solo=10, active=25, studio=50
-// Credits = live listings + live full_info developments; teasers always free
-const TIER_CREDIT_LIMITS: Record<string, number> = {
-  starter: 1,
-  solo: 10,
-  active: 25,
-  studio: 50,
-}
-
 export default function Developments() {
   const { user } = useAuth()
   const navigate = useNavigate()

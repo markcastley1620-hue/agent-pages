@@ -557,7 +557,6 @@ function FullInfoPage({
     return min === null ? u.price_from : Math.min(min, u.price_from)
   }, null)
 
-  const devShortCode = developer?.short_code ?? (developer?.name?.substring(0, 2).toUpperCase() ?? 'DV')
   const paymentPlan: PaymentMilestone[] = dev.payment_plan_json ?? []
   const totalPct = paymentPlan.reduce((s, m) => s + m.pct, 0)
 

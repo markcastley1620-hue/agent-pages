@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react'
 
 /* ── Types ── */
 export interface AISearchVisibilityProps {
-  mode: 'pre-publish' | 'post-publish'
-  visibilityConfig: Record<string, boolean>
-  onConfigChange: (config: Record<string, boolean>) => void
+  mode?: 'pre-publish' | 'post-publish'
+  visibilityConfig?: Record<string, boolean>
+  onConfigChange?: (config: Record<string, boolean>) => void
   publishedAt?: Date
+  /** Alias for visibilityConfig — used by off-plan flow */
+  value?: Record<string, boolean>
+  /** Alias for onConfigChange — used by off-plan flow */
+  onChange?: (cfg: Record<string, boolean>) => void
 }
 
 /* ── Engine Definitions ── */
@@ -228,18 +232,20 @@ function ElapsedTimer({ since }: { since: Date }) {
 /* ══════════════════════════════════════════════════════════════
    Main Component
 ══════════════════════════════════════════════════════════════ */
-export default function AISearchVisibility({ mode, visibilityConfig, onConfigChange, publishedAt }: AISearchVisibilityProps) {
-  const enabledCount = Object.values(visibilityConfig).filter(Boolean).length
+export default function AISearchVisibility({ mode, visibilityConfig, onConfigChange, publishedAt, value, onChange }: AISearchVisibilityProps) {
+  const config = value ?? visibilityConfig ?? {}
+  const onToggle = onChange ?? onConfigChange ?? (() => {})
+  const enabledCount = Object.values(config).filter(Boolean).length
   const allOn = enabledCount === ENGINES.length
 
   function setAll(val: boolean) {
     const next: Record<string, boolean> = {}
     ENGINES.forEach(e => { next[e.key] = val })
-    onConfigChange(next)
+    onToggle(next)
   }
 
   function setEngine(key: string, val: boolean) {
-    onConfigChange({ ...visibilityConfig, [key]: val })
+    onToggle({ ...config, [key]: val })
   }
 
   return (
@@ -357,7 +363,7 @@ export default function AISearchVisibility({ mode, visibilityConfig, onConfigCha
       {/* Engine rows */}
       <div>
         {ENGINES.map((engine, idx) => {
-          const isOn = visibilityConfig[engine.key] ?? true
+          const isOn = config[engine.key] ?? true
           const isLast = idx === ENGINES.length - 1
 
           return (
