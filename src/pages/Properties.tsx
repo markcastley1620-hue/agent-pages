@@ -12,6 +12,7 @@ interface Property {
   slug: string | null
   asking_price_aed: number | null
   community: string | null
+  property_type: string | null
   bedrooms: number | null
   size_sqft: number | null
   photo_count?: number
@@ -261,6 +262,7 @@ export default function Properties() {
                         )}
                       </div>
                       <div className="prop-meta">
+                        {prop.property_type && <span className="prop-type-badge">{prop.property_type}</span>}
                         {prop.community && <span>{prop.community}</span>}
                         {prop.community && prop.bedrooms && <span className="prop-meta-dot" />}
                         {prop.bedrooms && <span>{prop.bedrooms} beds</span>}

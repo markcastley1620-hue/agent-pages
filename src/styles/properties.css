@@ -189,3 +189,16 @@
   .plan-banner { padding: 14px 16px; }
   .plan-banner-icon { display: none; }
 }
+
+.prop-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-soft, #e8f0ed);
+  color: var(--accent, #2d5a4f);
+  margin-right: 2px;
+}
+
